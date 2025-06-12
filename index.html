@@ -145,7 +145,8 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
 	<script>
-	// Add this function at the global level async function fetchRecentStationData(stationName) {
+// Add this function at the global level
+async function fetchRecentStationData(stationName) {
     const data = dataByStation[stationName] || [];
     if (!data.length) return "<b>No recent data found for this station.</b>";
 
@@ -186,6 +187,7 @@
     html += `</table>`;
     return html;
 }
+
 
 
 
