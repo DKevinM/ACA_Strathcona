@@ -114,84 +114,126 @@
             <tbody></tbody>
         </table>
     </div>
+	
+	<script>
+	  let recentData = [];
+	  let dataByStation = {};
+	
+	  fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.csv')
+	    .then(res => res.text())
+	    .then(text => {
+	      const rows = text.trim().split('\n');
+	      const headers = rows[0].split(',');
+	
+	      rows.slice(1).forEach(line => {
+	        const cols = line.split(',');
+	        const entry = Object.fromEntries(headers.map((h, i) => [h, cols[i]]));
+	        if (!entry.Value || isNaN(entry.Latitude) || isNaN(entry.Longitude)) return;
+	
+	        recentData.push(entry);
+	        const name = entry.StationName;
+	        if (!dataByStation[name]) dataByStation[name] = [];
+	        dataByStation[name].push(entry);
+	      });
+	
+	      console.log("Loaded station data from CSV.");
+	    });
+	</script>
+
 
 	
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
 	<script>
-	// Add this function at the global level
-	async function fetchRecentStationData(stationName) {
-	    const baseURL = "https://data.environment.alberta.ca/EdwServices/aqhi/odata/StationMeasurements";
-	    const query = `$filter=StationName eq '${stationName}'&$orderby=ReadingDate desc&$top=50&$format=json`;
-	    const url = `${baseURL}?${encodeURI(query)}`;
-	
-	    try {
-	        const response = await fetch(url);
-	        const json = await response.json();
-	        const data = json.value;
-		    
-	        if (!data.length) return "<b>No recent data found for this station.</b>";
-	
-	        const unitMap = {
-	            "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb", "Hydrogen Sulphide": "ppb",
-	            "Total Reduced Sulphur": "ppb", "Sulphur Dioxide": "ppb", "Fine Particulate Matter": "µg/m³",
-	            "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm", "Wind Direction": "°",
-	            "Relative Humidity": "%", "Outdoor Temperature": "°C", "Nitric Oxide": "ppb",
-	            "Wind Speed": "km/h", "Non-methane Hydrocarbons": "ppm", "Nitrogen Dioxide": "ppb",
-	            "Methane": "ppm"
-	        };
-	
-	        const seen = new Set();
-		const allowedParams = [
-		    "Nitrogen Dioxide",
-		    "Ozone",
-		    "Sulphur Dioxide",
-		    "Hydrogen Sulphide",
-		    "Total Reduced Sulphur",
-		    "Total Hydrocarbons",
-		    "Fine Particulate Matter"
-		];
+	// Add this function at the global level async function fetchRecentStationData(stationName) {
+    const data = dataByStation[stationName] || [];
+    if (!data.length) return "<b>No recent data found for this station.</b>";
+
+    const unitMap = {
+        "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb", "Hydrogen Sulphide": "ppb",
+        "Total Reduced Sulphur": "ppb", "Sulphur Dioxide": "ppb", "Fine Particulate Matter": "µg/m³",
+        "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm", "Wind Direction": "°",
+        "Relative Humidity": "%", "Outdoor Temperature": "°C", "Nitric Oxide": "ppb",
+        "Wind Speed": "km/h", "Non-methane Hydrocarbons": "ppm", "Nitrogen Dioxide": "ppb",
+        "Methane": "ppm"
+    };
+
+    const allowedParams = [
+        "Nitrogen Dioxide", "Ozone", "Sulphur Dioxide", "Hydrogen Sulphide",
+        "Total Reduced Sulphur", "Total Hydrocarbons", "Fine Particulate Matter"
+    ];
+
+    const seen = new Set();
+    const latestByParam = data
+        .filter(row => allowedParams.includes(row.ParameterName))
+        .sort((a, b) => new Date(b.ReadingDate) - new Date(a.ReadingDate))
+        .filter(row => {
+            if (seen.has(row.ParameterName)) return false;
+            seen.add(row.ParameterName);
+            return true;
+        });
+
+    let html = `<table style="font-size:0.85em;width:100%;"><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>`;
+    latestByParam.forEach(row => {
+        let value = parseFloat(row.Value);
+        if (["Ozone", "Sulphur Dioxide", "Total Reduced Sulphur", "Hydrogen Sulphide", "Nitrogen Dioxide", "Nitric Oxide"].includes(row.ParameterName)) {
+            value = (value * 1000).toFixed(1);
+        } else {
+            value = isNaN(value) ? row.Value : value.toFixed(1);
+        }
+        html += `<tr><td>${row.ParameterName}</td><td>${value}</td><td>${unitMap[row.ParameterName] || ""}</td></tr>`;
+    });
+    html += `</table>`;
+    return html;
+}
+
+
+
+// Define base map layers first
+const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+});
+const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: '&copy; Google'
+});
+
+// Initialize map
+const map = L.map('map', {
+    layers: [openStreetMapLayer]  // default layer
+}).setView([53.535645, -113.47194], 8);
+
+// Prepare control object now
+const baseLayers = {
+    'OpenStreetMap': openStreetMapLayer,
+    'Satellite': satelliteLayer
+};
+const overlayLayers = {}; // placeholder – we'll add AQHI grid next
+
+// Create and add layer control to map
+const layerControl = L.control.layers(baseLayers, overlayLayers).addTo(map);
+
+// Fetch and add interpolated AQHI GeoJSON layer
+fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid.geojson")
+  .then(res => res.json())
+  .then(grid => {
+    const gridLayer = L.geoJSON(grid, {
+      style: feature => ({
+        fillColor: getAQHIColor(feature.properties.value),
+        color: "#444",
+        weight: 0.5,
+        fillOpacity: 0.6
+      }),
+      onEachFeature: (feature, layer) => {
+        const val = feature.properties.value;
+        layer.bindPopup(`Estimated AQHI: ${val}`);
+      }
+    }).addTo(map);
+
+    // Add to overlay toggle
+    layerControl.addOverlay(gridLayer, "Interpolated AQHI Grid");
+  });
 		
-		const latestByParam = data.filter(row => {
-		    if (!allowedParams.includes(row.ParameterName)) return false;
-		    if (seen.has(row.ParameterName)) return false;
-		    seen.add(row.ParameterName);
-		    return true;
-		});
-	
-	        let html = `<table style="font-size:0.85em;width:100%;"><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>`;
-	        latestByParam.forEach(row => {
-	            let value = parseFloat(row.Value);
-	            if (["Ozone", "Sulphur Dioxide", "Total Reduced Sulphur", "Hydrogen Sulphide", "Nitrogen Dioxide", "Nitric Oxide"].includes(row.ParameterName)) {
-	                value = (value * 1000).toFixed(1);
-	            } else {
-	                value = isNaN(value) ? row.Value : value.toFixed(1);
-	            }
-	            html += `<tr><td>${row.ParameterName}</td><td>${value}</td><td>${unitMap[row.ParameterName] || ""}</td></tr>`;
-	        });
-	        html += `</table>`;
-	        return html;
-	    } catch (e) {
-	        console.error("Fetch error:", e);
-	        return "<b>Error retrieving data.</b>";
-	    }
-	}
-
-
-	const map = L.map('map').setView([53.535645, -113.47194], 8);
-
-        // Define map layers
-        const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        });
-        const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-            attribution: '&copy; Google'
-        });
-
-        // Add default layer and layer control
-        openStreetMapLayer.addTo(map);
-        L.control.layers({ 'OpenStreetMap': openStreetMapLayer, 'Satellite': satelliteLayer }).addTo(map);
 
         // Global variables for markers
         let existingMarkers = [];
@@ -401,74 +443,57 @@
             // existingMarkers.push(selectedMarker); // Track the selected marker
 
             // Find closest AQHI station
-            let closestAQHIStation = null;
-            let minAQHIDistance = Infinity;
-            aqhiStations.forEach(station => {
-                const distance = getDistance(lat, lng, station.lat, station.lon);
-                if (distance < minAQHIDistance) {
-                    minAQHIDistance = distance;
-                    closestAQHIStation = station;
-                }
-											   
-            });
+	const aqhiSorted = aqhiStations.map(station => ({
+	    ...station,
+	    distance: getDistance(lat, lng, station.lat, station.lon)
+	})).sort((a, b) => a.distance - b.distance).slice(0, 2);
+	
+	aqhiSorted.forEach(station => {
+	    const { lat: stationLat, lon: stationLon, name, aqhi, distance } = station;
+	
+	    const marker = L.circleMarker([stationLat, stationLon], {
+	        radius: 15,
+	        fillColor: getAQHIColor(aqhi),
+	        color: getAQHIColor(aqhi),
+	        weight: 3,
+	        fillOpacity: 0.8,
+	    }).addTo(map).bindPopup(
+	        `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(distance / 1000).toFixed(2)} km<br><em>Loading detailed data...</em>`
+	    );
+	    existingMarkers.push(marker);
+	
+	    fetchRecentStationData(name).then(html => {
+	        if (marker.isPopupOpen()) {
+	            marker.setPopupContent(
+	                `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(distance / 1000).toFixed(2)} km<br><br>${html}`
+	            );
+	        }
+	    });
+	});
+
 
             // Find closest PurpleAir sensor
-            let closestPurpleAirSensor = null;
-            let minPurpleAirDistance = Infinity;
-            purpleAirSensors.forEach(sensor => {
-                const distance = getDistance(lat, lng, sensor.lat, sensor.lon);
-                if (distance < minPurpleAirDistance) {
-                    minPurpleAirDistance = distance;
-                    closestPurpleAirSensor = sensor;
-                }
-            });
+	const purpleSorted = purpleAirSensors.map(sensor => ({
+	    ...sensor,
+	    distance: getDistance(lat, lng, sensor.lat, sensor.lon)
+	})).sort((a, b) => a.distance - b.distance).slice(0, 2);
 	
-            // Display closest AQHI station
-		if (closestAQHIStation) {
-		    const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
-		
-		    const stationMarker = L.circleMarker([stationLat, stationLon], {
-		        radius: 15,
-		        fillColor: getAQHIColor(aqhi),
-		        color: getAQHIColor(aqhi),
-		        weight: 3,
-		        fillOpacity: 0.8,
-		    }).addTo(map).bindPopup(
-		        `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br><em>Loading detailed data...</em>`
-		    ).openPopup();
-		
-		    existingMarkers.push(stationMarker);
-		
-		    // Fetch extra data without blocking
-		    fetchRecentStationData(name).then(html => {
-		        if (stationMarker.isPopupOpen()) {
-		            stationMarker.setPopupContent(
-		                `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br><br>${html}`
-		            );
-		        }
-		    }).catch(err => {
-		        console.error("Error fetching station data:", err);
-		    });
-		}
+	purpleSorted.forEach(sensor => {
+	    const { lat, lon, name, pm25, distance } = sensor;
+	
+	    const marker = L.circleMarker([lat, lon], {
+	        radius: 8,
+	        fillColor: getPM25Color(pm25),
+	        color: getPM25Color(pm25),
+	        weight: 1,
+	        fillOpacity: 0.8,
+	    }).addTo(map).bindPopup(
+	        `<strong>Closest PurpleAir Sensor</strong><br>${name}<br>PM2.5: ${pm25.toFixed(1)} µg/m³<br>Distance: ${(distance / 1000).toFixed(2)} km`
+	    );
+	    existingMarkers.push(marker);
+	});
 
-
-            // Display closest PurpleAir sensor
-            if (closestPurpleAirSensor) {
-                const { lat: sensorLat, lon: sensorLon, name: sensorName, pm25 } = closestPurpleAirSensor;
-                const sensorMarker = L.circleMarker([sensorLat, sensorLon], {
-                    radius: 8,
-                    fillColor: getPM25Color(pm25),
-                    color: getPM25Color(pm25),
-                    weight: 1,
-                    fillOpacity: 0.8,
-                }).addTo(map).bindPopup(
-                    `<strong>Closest PurpleAir Sensor</strong><br>${sensorName}<br>PM2.5: ${pm25.toFixed(1)} µg/m³<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`
-                );
-                existingMarkers.push(sensorMarker);
-            }
-        }
-
-
+	
     // Map click event
     map.on('click', async function (e) {
         const lat = e.latlng.lat;
