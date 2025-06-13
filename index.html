@@ -55,7 +55,7 @@
         }
         #weather-info {
             position: absolute;
-            top: 150px;
+            top: 125px;
             right: 10px;
             width: 300px;
             background-color: white;
@@ -434,35 +434,77 @@
 	  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 	}
 	
-	function findAndDisplayClosest(lat, lng) {
-	  if (!recentData.length) {
-	    console.warn("No recent data loaded yet.");
-	    return;
-	  }
-	
-	  const sorted = recentData
-	    .filter(d => d.Latitude && d.Longitude && d.Value)
-	    .sort((a, b) =>
-	      getDistance(lat, lng, a.Latitude, a.Longitude) -
-	      getDistance(lat, lng, b.Latitude, b.Longitude)
-	    );
-	
-	  const closest = sorted.slice(0, 2);
-	
-	  const html = closest.map((s, i) => `
-	    <strong>Station ${i + 1}</strong><br>
-	    ${s.StationName}<br>
-	    AQHI: ${s.Value}<br>
-	    Time: ${s.ReadingDate}<br><hr>
-	  `).join("");
-	
-	  L.popup()
-	    .setLatLng([lat, lng])
-	    .setContent(html)
-	    .openOn(map);
-	}
+function formatToEdmontonTime(iso) {
+  return new Date(iso).toLocaleString("en-CA", {
+    timeZone: "America/Edmonton",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+}
 
+function getLatestStationData(stationName) {
+  const stationData = dataByStation[stationName];
+  if (!stationData || stationData.length === 0) return [];
 
+  const latestTime = stationData
+    .map(d => d.ReadingDate)
+    .sort()
+    .reverse()[0];
+
+  return stationData
+    .filter(d => d.ReadingDate === latestTime)
+    .sort((a, b) => a.ParameterName.localeCompare(b.ParameterName));
+}
+
+function findAndDisplayClosest(lat, lng) {
+  if (!recentData.length) {
+    console.warn("No recent data loaded yet.");
+    return;
+  }
+
+  // Filter AQHI-only data (ParameterName is blank)
+  const aqhiByStation = {};
+  recentData.forEach(d => {
+    if (d.ParameterName === "" && d.StationName && d.Value) {
+      if (!aqhiByStation[d.StationName] ||
+          new Date(d.ReadingDate) > new Date(aqhiByStation[d.StationName].ReadingDate)) {
+        aqhiByStation[d.StationName] = d;
+      }
+    }
+  });
+
+  // Sort by distance from click
+  const sorted = Object.values(aqhiByStation).sort((a, b) =>
+    getDistance(lat, lng, a.Latitude, a.Longitude) -
+    getDistance(lat, lng, b.Latitude, b.Longitude)
+  );
+
+  const closest = sorted.slice(0, 2); // Get 2 closest stations
+
+  const html = closest.map((s, i) => {
+    const fullData = getLatestStationData(s.StationName);
+    const tableRows = fullData.map(row =>
+      `<tr><td>${row.ParameterName || "AQHI"}</td><td>${row.Value}</td></tr>`
+    ).join("");
+
+    return `
+      <strong>Station ${i + 1}</strong><br>
+      ${s.StationName}<br>
+      Time: ${formatToEdmontonTime(s.ReadingDate)}<br>
+      <table style="font-size:13px; margin-top:4px;">${tableRows}</table><hr>
+    `;
+  }).join("");
+
+  L.popup()
+    .setLatLng([lat, lng])
+    .setContent(html)
+    .openOn(map);
+}
+	
 		
 		
     // Map click event
