@@ -254,7 +254,7 @@
 	fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid.geojson")
 	      .then(response => response.json())
 	      .then(data => {
-		L.geoJson(data, {
+		const gridLayer = L.geoJson(data, {
 		  style: style,
 		  onEachFeature: function (feature, layer) {
 		    layer.bindPopup("AQHI: " + feature.properties.aqhi_str);
@@ -265,8 +265,6 @@
 	    layerControl.addOverlay(gridLayer, "Interpolated AQHI Grid");
 	      });
 
-	  
-		
 
         // Global variables for markers
         let existingMarkers = [];
