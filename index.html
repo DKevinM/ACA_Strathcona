@@ -212,6 +212,25 @@ const baseLayers = {
 };
 const overlayLayers = {}; // placeholder – we'll add AQHI grid next
 
+
+function getColor(aqhi) {
+  switch (aqhi) {
+    case "1": return "#01cbff";
+    case "2": return "#0099cb";
+    case "3": return "#016797";
+    case "4": return "#fffe03";
+    case "5": return "#ffcb00";
+    case "6": return "#ff9835";
+    case "7": return "#fd6866";
+    case "8": return "#fe0002";
+    case "9": return "#cc0001";
+    case "10": return "#9a0100";
+    case "10+": return "#640100";
+    default: return "#D3D3D3";
+  }
+}
+
+		
 // Create and add layer control to map
 const layerControl = L.control.layers(baseLayers, overlayLayers).addTo(map);
 
