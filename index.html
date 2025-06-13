@@ -213,14 +213,9 @@
 	    'Satellite': satelliteLayer
 	};
 	const overlayLayers = {}; // placeholder – we'll add AQHI grid next
-	
-	
-
-	
-			
-	// Create and add layer control to map
 	const layerControl = L.control.layers(baseLayers, overlayLayers).addTo(map);
 
+		
 	    // Color function
 	function getColorgrid(aqhi) {
 	  switch (aqhi) {
@@ -255,15 +250,18 @@
 	      .then(response => response.json())
 	      .then(data => {
 		const gridLayer = L.geoJson(data, {
-		  style: style,
-		  onEachFeature: function (feature, layer) {
-		    layer.bindPopup("AQHI: " + feature.properties.aqhi_str);
+		      style: style,
+		      onEachFeature: function (feature, layer) {
+			layer.bindPopup("AQHI: " + feature.properties.aqhi_str);
 		  }
-		}).addTo(map);
-		      
-	    // Add to overlay toggle
+	    });
+	
+	    // Show by default (optional)
+	    gridLayer.addTo(map);
+	
+	    // Add to layer control
 	    layerControl.addOverlay(gridLayer, "Interpolated AQHI Grid");
-	      });
+	  });
 
 
         // Global variables for markers
