@@ -55,7 +55,7 @@
         }
         #weather-info {
             position: absolute;
-            top: 80px;
+            top: 150px;
             right: 10px;
             width: 300px;
             background-color: white;
@@ -145,115 +145,101 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
 	<script>
-// Add this function at the global level
-async function fetchRecentStationData(stationName) {
-    const data = dataByStation[stationName] || [];
-    if (!data.length) return "<b>No recent data found for this station.</b>";
-
-    const unitMap = {
-        "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb", "Hydrogen Sulphide": "ppb",
-        "Total Reduced Sulphur": "ppb", "Sulphur Dioxide": "ppb", "Fine Particulate Matter": "µg/m³",
-        "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm", "Wind Direction": "°",
-        "Relative Humidity": "%", "Outdoor Temperature": "°C", "Nitric Oxide": "ppb",
-        "Wind Speed": "km/h", "Non-methane Hydrocarbons": "ppm", "Nitrogen Dioxide": "ppb",
-        "Methane": "ppm"
-    };
-
-    const allowedParams = [
-        "Nitrogen Dioxide", "Ozone", "Sulphur Dioxide", "Hydrogen Sulphide",
-        "Total Reduced Sulphur", "Total Hydrocarbons", "Fine Particulate Matter"
-    ];
-
-    const seen = new Set();
-    const latestByParam = data
-        .filter(row => allowedParams.includes(row.ParameterName))
-        .sort((a, b) => new Date(b.ReadingDate) - new Date(a.ReadingDate))
-        .filter(row => {
-            if (seen.has(row.ParameterName)) return false;
-            seen.add(row.ParameterName);
-            return true;
-        });
-
-    let html = `<table style="font-size:0.85em;width:100%;"><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>`;
-    latestByParam.forEach(row => {
-        let value = parseFloat(row.Value);
-        if (["Ozone", "Sulphur Dioxide", "Total Reduced Sulphur", "Hydrogen Sulphide", "Nitrogen Dioxide", "Nitric Oxide"].includes(row.ParameterName)) {
-            value = (value * 1000).toFixed(1);
-        } else {
-            value = isNaN(value) ? row.Value : value.toFixed(1);
-        }
-        html += `<tr><td>${row.ParameterName}</td><td>${value}</td><td>${unitMap[row.ParameterName] || ""}</td></tr>`;
-    });
-    html += `</table>`;
-    return html;
-}
-
-
+	// Add this function at the global level
+	async function fetchRecentStationData(stationName) {
+	    const data = dataByStation[stationName] || [];
+	    if (!data.length) return "<b>No recent data found for this station.</b>";
+	
+	    const unitMap = {
+	        "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb", "Hydrogen Sulphide": "ppb",
+	        "Total Reduced Sulphur": "ppb", "Sulphur Dioxide": "ppb", "Fine Particulate Matter": "µg/m³",
+	        "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm", "Wind Direction": "°",
+	        "Relative Humidity": "%", "Outdoor Temperature": "°C", "Nitric Oxide": "ppb",
+	        "Wind Speed": "km/h", "Non-methane Hydrocarbons": "ppm", "Nitrogen Dioxide": "ppb",
+	        "Methane": "ppm"
+	    };
+	
+	    const allowedParams = [
+	        "Nitrogen Dioxide", "Ozone", "Sulphur Dioxide", "Hydrogen Sulphide",
+	        "Total Reduced Sulphur", "Total Hydrocarbons", "Fine Particulate Matter"
+	    ];
+	
+	    const seen = new Set();
+	    const latestByParam = data
+	        .filter(row => allowedParams.includes(row.ParameterName))
+	        .sort((a, b) => new Date(b.ReadingDate) - new Date(a.ReadingDate))
+	        .filter(row => {
+	            if (seen.has(row.ParameterName)) return false;
+	            seen.add(row.ParameterName);
+	            return true;
+	        });
+	
+	    let html = `<table style="font-size:0.85em;width:100%;"><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>`;
+	    latestByParam.forEach(row => {
+	        let value = parseFloat(row.Value);
+	        if (["Ozone", "Sulphur Dioxide", "Total Reduced Sulphur", "Hydrogen Sulphide", "Nitrogen Dioxide", "Nitric Oxide"].includes(row.ParameterName)) {
+	            value = (value * 1000).toFixed(1);
+	        } else {
+	            value = isNaN(value) ? row.Value : value.toFixed(1);
+	        }
+	        html += `<tr><td>${row.ParameterName}</td><td>${value}</td><td>${unitMap[row.ParameterName] || ""}</td></tr>`;
+	    });
+	    html += `</table>`;
+	    return html;
+	}
 
 
-// Define base map layers first
-const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-});
-const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-    attribution: '&copy; Google'
-});
-
-// Initialize map
-const map = L.map('map', {
-    layers: [openStreetMapLayer]  // default layer
-}).setView([53.535645, -113.47194], 8);
-
-// Prepare control object now
-const baseLayers = {
-    'OpenStreetMap': openStreetMapLayer,
-    'Satellite': satelliteLayer
-};
-const overlayLayers = {}; // placeholder – we'll add AQHI grid next
 
 
-function getColor(aqhi) {
-  switch (aqhi) {
-    case "1": return "#01cbff";
-    case "2": return "#0099cb";
-    case "3": return "#016797";
-    case "4": return "#fffe03";
-    case "5": return "#ffcb00";
-    case "6": return "#ff9835";
-    case "7": return "#fd6866";
-    case "8": return "#fe0002";
-    case "9": return "#cc0001";
-    case "10": return "#9a0100";
-    case "10+": return "#640100";
-    default: return "#D3D3D3";
-  }
-}
+	// Define base map layers first
+	const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	    attribution: '&copy; OpenStreetMap contributors'
+	});
+	const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+	    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+	    attribution: '&copy; Google'
+	});
 
 		
-// Create and add layer control to map
-const layerControl = L.control.layers(baseLayers, overlayLayers).addTo(map);
+	// Initialize map
+	const map = L.map('map', {
+	    layers: [openStreetMapLayer]  // default layer
+	}).setView([53.563599, -113.180244], 9;
+	
+	// Prepare control object now
+	const baseLayers = {
+	    'OpenStreetMap': openStreetMapLayer,
+	    'Satellite': satelliteLayer
+	};
+	const overlayLayers = {}; // placeholder – we'll add AQHI grid next
+	
+	
 
-// Fetch and add interpolated AQHI GeoJSON layer
-fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid.geojson")
-  .then(res => res.json())
-  .then(grid => {
-    const gridLayer = L.geoJSON(grid, {
-      style: feature => ({
-        fillColor: getAQHIColor(feature.properties.value),
-        color: "#444",
-        weight: 0.5,
-        fillOpacity: 0.6
-      }),
-      onEachFeature: (feature, layer) => {
-        const val = feature.properties.value;
-        layer.bindPopup(`Estimated AQHI: ${val}`);
-      }
-    }).addTo(map);
-
-    // Add to overlay toggle
-    layerControl.addOverlay(gridLayer, "Interpolated AQHI Grid");
-  });
+	
+			
+	// Create and add layer control to map
+	const layerControl = L.control.layers(baseLayers, overlayLayers).addTo(map);
+	
+	// Fetch and add interpolated AQHI GeoJSON layer
+	fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid.geojson")
+	  .then(res => res.json())
+	  .then(grid => {
+	    const gridLayer = L.geoJSON(grid, {
+	      style: feature => ({
+	        fillColor: getAQHIColor(feature.properties.value),
+	        color: "#444",
+	        weight: 0.5,
+	        fillOpacity: 0.6
+	      }),
+	      onEachFeature: (feature, layer) => {
+	        const val = feature.properties.value;
+	        layer.bindPopup(`Estimated AQHI: ${val}`);
+	      }
+	    }).addTo(map);
+	
+	    // Add to overlay toggle
+	    layerControl.addOverlay(gridLayer, "Interpolated AQHI Grid");
+	  });
 		
 
         // Global variables for markers
@@ -300,6 +286,7 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
             }
         }    
 
+		
         // Adjust PM2.5 based on RH
         function adjustPM25(RH, PM25) {
             if (RH === null || isNaN(RH)) RH = 50; // Default RH to 50 if not available
@@ -311,7 +298,8 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
                 return PM25 / (1 + (0.24 / (100 / RH - 1)));
             }
         }        
-        
+
+		
         // Handle "Zoom to My Current Location" button click
         document.getElementById('location-button').addEventListener('click', function () {
             if (navigator.geolocation) {
@@ -338,6 +326,7 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
         });       
 
 
+		
         function getWindDirectionLabel(deg) {
             const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
                                 "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
@@ -347,43 +336,6 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
 
 
         
-        // Fetch combined AQHI station and reading data
-        async function fetchCombinedAQHIData() {
-            const stationUrl = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
-            const aqhiUrl = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/StationAqhis';
-
-            try {
-                const stationResponse = await fetch(stationUrl);
-                const stationData = await stationResponse.json();
-                const stations = stationData.value.map(station => ({
-                    name: station.Name,
-                    airshed: station.AirshedName,
-                    lat: station.Latitude,
-                    lon: station.Longitude,
-                }));
-
-                const aqhiResponse = await fetch(aqhiUrl);
-                const aqhiData = await aqhiResponse.json();
-                const aqhiReadings = aqhiData.value.map(reading => ({
-                    name: reading.StationName,
-                    date: reading.ReadingDate,
-                    aqhi: reading.Aqhi,
-                }));
-
-                // Combine data based on station name
-                return stations.map(station => {
-                    const matchingReading = aqhiReadings.find(reading => reading.name === station.name);
-                    return {
-                        ...station,
-                        aqhi: matchingReading ? matchingReading.aqhi : null,
-                        date: matchingReading ? matchingReading.date : null,
-                    };
-                });
-            } catch (error) {
-                console.error('Error fetching combined AQHI data:', error);
-                return [];
-            }
-        }
 
         // Fetch PurpleAir data
         async function fetchPurpleAirData() {
@@ -409,6 +361,8 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
             }
         }
 
+
+		
         // Distance calculation
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371e3; // Earth's radius in meters
@@ -422,6 +376,8 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
             return R * c; // in meters
         }
 
+
+		
         // AQHI color coding
         function getAQHIColor(aqhi) {
             if (!aqhi || isNaN(aqhi)) return "#808080"; // Gray for invalid AQHI
@@ -438,6 +394,8 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
             return "#01cbff"; // AQHI 1
         }
 
+
+		
         // PM2.5 color coding
         function getPM25Color(pm25) {
             if (!pm25 || isNaN(pm25)) return "#808080"; // Gray for invalid PM2.5
@@ -459,10 +417,6 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
         async function findAndDisplayClosest(lat, lng) {
             const aqhiStations = await fetchCombinedAQHIData();
             const purpleAirSensors = await fetchPurpleAirData();
-
-            // Add selected marker
-            // selectedMarker = L.marker([lat, lng]).addTo(map).bindPopup(`Selected Location<br>Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}`).openPopup();
-            // existingMarkers.push(selectedMarker); // Track the selected marker
 
             // Find closest AQHI station
 	const aqhiSorted = aqhiStations.map(station => ({
@@ -495,7 +449,8 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
 	}
 
 
-            // Find closest PurpleAir sensor
+		
+        // Find closest PurpleAir sensor
 	const purpleSorted = purpleAirSensors.map(sensor => ({
 	    ...sensor,
 	    distance: getDistance(lat, lng, sensor.lat, sensor.lon)
@@ -516,16 +471,20 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
 	    existingMarkers.push(marker);
 	});
 
-	
+
+		
     // Map click event
     map.on('click', async function (e) {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
 		
-														   
+
+	    
     // Clear the map before adding new markers
     clearMap();
 
+
+	    
     // Reverse geocoding with Nominatim
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
     fetch(url)
@@ -533,6 +492,8 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
         .then(data => {
             const address = data.display_name || "No address found";
 
+
+		
             // Add a marker with latitude, longitude, and address as the content
             selectedMarker = L.marker([lat, lng])
                 .addTo(map)
@@ -544,9 +505,13 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
                 `)
                 .openPopup(); // Keep the popup open initially
 
+
+		
             // Track this marker in existingMarkers for easy removal
             existingMarkers.push(selectedMarker);
 
+
+		
             // Call function to find and display the closest station
             findAndDisplayClosest(lat, lng);
                 fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=America%2FEdmonton`)
@@ -669,6 +634,8 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
         .catch(error => {
             console.error("Error with reverse geocoding:", error);
 
+
+		
             // Add a fallback marker with no address
             selectedMarker = L.marker([lat, lng])
                 .addTo(map)
@@ -680,9 +647,13 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
                 `)
                 .openPopup();
 
+
+		
             // Track this marker in existingMarkers for easy removal
             existingMarkers.push(selectedMarker);
-            
+
+
+		
             // Call function to find and display the closest station
             findAndDisplayClosest(lat, lng);
         });
