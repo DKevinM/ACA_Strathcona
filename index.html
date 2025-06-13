@@ -338,29 +338,7 @@
 
         
 
-        // Fetch PurpleAir data
-        async function fetchPurpleAirData() {
-	return []; 
-            const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
-            const purpleAirUrl = `https://api.purpleair.com/v1/sensors?fields=name,latitude,longitude,pm2.5_60minute,humidity`;
 
-            try {
-                const response = await fetch(purpleAirUrl, {
-                    headers: { 'X-API-Key': API_KEY }
-                });
-                const data = await response.json();
-                return data.data.map(sensor => ({
-                    name: sensor[1],
-                    lat: sensor[2],
-                    lon: sensor[3],
-                    pm25: adjustPM25(sensor[4], sensor[5]), // Adjust PM2.5 using the function
-                    rh: sensor[5],
-                }));
-            } catch (error) {
-                console.error('Error fetching PurpleAir data:', error);
-                return [];
-            }
-        }
 
 
 		
