@@ -55,7 +55,7 @@
         }
         #weather-info {
             position: absolute;
-            top: 110px;
+            top: 105px;
             right: 10px;
             width: 300px;
             background-color: white;
@@ -521,7 +521,7 @@ document.querySelector("#station-info").innerHTML = `
 }
 	
   // Sort by distance from click
-  const sorted = Object.values(aqhiByStation).sort((a, b) =>
+  const sorted = Object.values(dataByStation).sort((a, b) =>
     getDistance(lat, lng, a.Latitude, a.Longitude) -
     getDistance(lat, lng, b.Latitude, b.Longitude)
   );
