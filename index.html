@@ -114,7 +114,9 @@
             <tbody></tbody>
         </table>
     </div>
-	
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
 	<script>
 	  let recentData = [];
 	  let dataByStation = {};
@@ -422,53 +424,44 @@
 		
         // Find and display closest sensors and stations
         async function findAndDisplayClosest(lat, lng) {
-	  const res = await fetch("https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.csv");
-	  const text = await res.text();
-	
-	  const parsed = Papa.parse(text, {
-	    header: true,
-	    dynamicTyping: true,
-	    skipEmptyLines: true
-	  });
-
-	  const rows = parsed.data.filter(row =>
-	    row.Latitude && row.Longitude && row.Value && !isNaN(row.Latitude) && !isNaN(row.Longitude)
-	  );
-	
-	  function getDistance(lat1, lon1, lat2, lon2) {
-	    const toRad = x => x * Math.PI / 180;
-	    const R = 6371; // Earth radius in km
-	    const dLat = toRad(lat2 - lat1);
-	    const dLon = toRad(lon2 - lon1);
-	    const a = Math.sin(dLat/2)**2 +
-	              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-	              Math.sin(dLon/2)**2;
-	    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-	  }
-	
-	  // Sort by distance
-	  rows.sort((a, b) => {
-	    const da = getDistance(lat, lng, a.Latitude, a.Longitude);
-	    const db = getDistance(lat, lng, b.Latitude, b.Longitude);
-	    return da - db;
-	  });
-	
-	  // Get two closest stations
-	  const closest = rows.slice(0, 2);
-	
-	  const popupHTML = closest.map((s, i) => `
-	    <strong>Station ${i+1}</strong><br>
-	    ${s.StationName}<br>
-	    AQHI: ${s.Value}<br>
-	    Time: ${s.ReadingDate}<br>
-	    <hr>
-	  `).join("");
-	
-	  L.popup()
-	    .setLatLng([lat, lng])
-	    .setContent(popupHTML)
-	    .openOn(map);
-	}
+		function getDistance(lat1, lon1, lat2, lon2) {
+		  const toRad = x => x * Math.PI / 180;
+		  const R = 6371;
+		  const dLat = toRad(lat2 - lat1);
+		  const dLon = toRad(lon2 - lon1);
+		  const a = Math.sin(dLat / 2) ** 2 +
+		            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+		            Math.sin(dLon / 2) ** 2;
+		  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		}
+		
+		function findAndDisplayClosest(lat, lng) {
+		  if (!recentData.length) {
+		    console.warn("No recent data loaded yet.");
+		    return;
+		  }
+		
+		  const sorted = recentData
+		    .filter(d => d.Latitude && d.Longitude && d.Value)
+		    .sort((a, b) =>
+		      getDistance(lat, lng, a.Latitude, a.Longitude) -
+		      getDistance(lat, lng, b.Latitude, b.Longitude)
+		    );
+		
+		  const closest = sorted.slice(0, 2);
+		
+		  const html = closest.map((s, i) => `
+		    <strong>Station ${i + 1}</strong><br>
+		    ${s.StationName}<br>
+		    AQHI: ${s.Value}<br>
+		    Time: ${s.ReadingDate}<br><hr>
+		  `).join("");
+		
+		  L.popup()
+		    .setLatLng([lat, lng])
+		    .setContent(html)
+		    .openOn(map);
+		}
 
 
 		
