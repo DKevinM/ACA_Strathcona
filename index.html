@@ -238,10 +238,10 @@
 	  return {
 	    fillColor: getColorgrid(feature.properties.aqhi_str),
 	    weight: 0.5,
-	    opacity: 1,
+	    opacity: 0.6,
 	    color: 'white',
 	    dashArray: '3',
-	    fillOpacity: 0.7
+	    fillOpacity: 0.6
 	  };
 	}
 
@@ -252,9 +252,15 @@
 		const gridLayer = L.geoJson(data, {
 		      style: style,
 		      onEachFeature: function (feature, layer) {
-			layer.bindPopup("AQHI: " + feature.properties.aqhi_str);
+			    const aqhi = feature.properties.aqhi_str;
+			    layer.bindTooltip(`AQHI: ${aqhi}`, {
+			      sticky: true,
+			      direction: "top",
+			      opacity: 0.8
+			 });
 		  }
 	    });
+
 	
 	    // Show by default (optional)
 	    gridLayer.addTo(map);
