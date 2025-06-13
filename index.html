@@ -55,7 +55,7 @@
         }
         #weather-info {
             position: absolute;
-            top: 125px;
+            top: 110px;
             right: 10px;
             width: 300px;
             background-color: white;
@@ -477,6 +477,49 @@ function findAndDisplayClosest(lat, lng) {
     }
   });
 
+	
+  // Clear any old markers
+  if (window.closestStationMarkers) {
+    window.closestStationMarkers.forEach(m => map.removeLayer(m));
+  }
+  window.closestStationMarkers = [];
+
+	
+  // Drop markers for both stations
+  closest.forEach((s, i) => {
+    const marker = L.marker([s.Latitude, s.Longitude])
+      .addTo(map)
+      .bindPopup(`<strong>${s.StationName}</strong><br>AQHI: ${s.Value}`);
+    window.closestStationMarkers.push(marker);
+  });
+
+	
+function getLatestStationData(stationName) {
+  const entries = dataByStation[stationName];
+  if (!entries) return [];
+  
+  // Get latest ReadingDate (assumes ISO timestamp)
+  const latestTime = entries.reduce((max, e) => e.ReadingDate > max ? e.ReadingDate : max, "");
+  return entries.filter(e => e.ReadingDate === latestTime);
+}
+
+	
+document.querySelector("#station-info").innerHTML = `
+  <h4>Closest Stations Summary</h4>
+  ${closest.map((s, i) => {
+    const rows = getLatestStationData(s.StationName).map(row =>
+      `<tr><td>${row.ParameterName || "AQHI"}</td><td>${row.Value}</td></tr>`
+    ).join("");
+
+    return `
+      <strong>Station ${i + 1}: ${s.StationName}</strong><br>
+      <em>Time: ${formatToEdmontonTime(s.ReadingDate)}</em>
+      <table style="font-size:12px; margin-bottom:12px;"><tbody>${rows}</tbody></table>
+    `;
+  }).join("")}
+`;
+}
+	
   // Sort by distance from click
   const sorted = Object.values(aqhiByStation).sort((a, b) =>
     getDistance(lat, lng, a.Latitude, a.Longitude) -
@@ -491,6 +534,7 @@ function findAndDisplayClosest(lat, lng) {
       `<tr><td>${row.ParameterName || "AQHI"}</td><td>${row.Value}</td></tr>`
     ).join("");
 
+
     return `
       <strong>Station ${i + 1}</strong><br>
       ${s.StationName}<br>
@@ -499,10 +543,16 @@ function findAndDisplayClosest(lat, lng) {
     `;
   }).join("");
 
-  L.popup()
-    .setLatLng([lat, lng])
-    .setContent(html)
-    .openOn(map);
+const marker = L.marker([s.Latitude, s.Longitude]).addTo(map);
+marker.bindPopup(`${s.StationName}<br>AQHI: ${s.Value}`).openPopup();
+
+let closestStationMarkers = [];
+
+function clearClosestMarkers() {
+  closestStationMarkers.forEach(m => map.removeLayer(m));
+  closestStationMarkers = [];
+}
+
 }
 	
 		
