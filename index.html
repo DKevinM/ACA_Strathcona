@@ -543,8 +543,26 @@ document.querySelector("#station-info").innerHTML = `
     `;
   }).join("");
 
-const marker = L.marker([s.Latitude, s.Longitude]).addTo(map);
-marker.bindPopup(`${s.StationName}<br>AQHI: ${s.Value}`).openPopup();
+closest.forEach((s, i) => {
+  const marker = L.marker([s.Latitude, s.Longitude]).addTo(map);
+  marker.bindPopup(`${s.StationName}<br>AQHI: ${s.Value}`);
+
+  // Hover behavior
+  marker.on("mouseover", function () {
+    this.openPopup();
+  });
+
+  marker.on("mouseout", function () {
+    this.closePopup();
+  });
+
+  // Click disables mouseout (keeps popup open)
+  marker.on("click", function () {
+    this.openPopup();
+    this.off("mouseout");
+  });
+});
+
 
 let closestStationMarkers = [];
 
