@@ -189,7 +189,16 @@
 	}
 
 
-
+	onEachFeature: function (feature, layer) {
+	  const aqhi = feature.properties.aqhi_str;
+	  const color = getAQHIColor(aqhi);  // your function to get AQHI color
+	
+	  layer.bindTooltip(`<div style="color:${color}; font-weight:bold">AQHI: ${aqhi}</div>`, {
+	    sticky: true,
+	    direction: "top",
+	    opacity: 0.9
+	  });
+	}
 
 	// Define base map layers first
 	const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
