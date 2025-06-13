@@ -189,16 +189,6 @@
 	}
 
 
-	onEachFeature: function (feature, layer) {
-	  const aqhi = feature.properties.aqhi_str;
-	  const color = getAQHIColor(aqhi);  // your function to get AQHI color
-	
-	  layer.bindTooltip(`<div style="color:${color}; font-weight:bold">AQHI: ${aqhi}</div>`, {
-	    sticky: true,
-	    direction: "top",
-	    opacity: 0.9
-	  });
-	}
 
 	// Define base map layers first
 	const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -432,63 +422,56 @@
 		
         // Find and display closest sensors and stations
         async function findAndDisplayClosest(lat, lng) {
-            const aqhiStations = await fetchCombinedAQHIData();
-            const purpleAirSensors = await fetchPurpleAirData();
+	  const res = await fetch("https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.csv");
+	  const text = await res.text();
+	
+	  const parsed = Papa.parse(text, {
+	    header: true,
+	    dynamicTyping: true,
+	    skipEmptyLines: true
+	  });
 
-            // Find closest AQHI station
-	const aqhiSorted = aqhiStations.map(station => ({
-	    ...station,
-	    distance: getDistance(lat, lng, station.lat, station.lon)
-	})).sort((a, b) => a.distance - b.distance).slice(0, 2);
+	  const rows = parsed.data.filter(row =>
+	    row.Latitude && row.Longitude && row.Value && !isNaN(row.Latitude) && !isNaN(row.Longitude)
+	  );
 	
-	aqhiSorted.forEach(station => {
-	    const { lat: stationLat, lon: stationLon, name, aqhi, distance } = station;
+	  function getDistance(lat1, lon1, lat2, lon2) {
+	    const toRad = x => x * Math.PI / 180;
+	    const R = 6371; // Earth radius in km
+	    const dLat = toRad(lat2 - lat1);
+	    const dLon = toRad(lon2 - lon1);
+	    const a = Math.sin(dLat/2)**2 +
+	              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+	              Math.sin(dLon/2)**2;
+	    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+	  }
 	
-	    const marker = L.circleMarker([stationLat, stationLon], {
-	        radius: 15,
-	        fillColor: getAQHIColor(aqhi),
-	        color: getAQHIColor(aqhi),
-	        weight: 3,
-	        fillOpacity: 0.8,
-	    }).addTo(map).bindPopup(
-	        `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(distance / 1000).toFixed(2)} km<br><em>Loading detailed data...</em>`
-	    );
-	    existingMarkers.push(marker);
+	  // Sort by distance
+	  rows.sort((a, b) => {
+	    const da = getDistance(lat, lng, a.Latitude, a.Longitude);
+	    const db = getDistance(lat, lng, b.Latitude, b.Longitude);
+	    return da - db;
+	  });
 	
-	    fetchRecentStationData(name).then(html => {
-	        if (marker.isPopupOpen()) {
-	            marker.setPopupContent(
-	                `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(distance / 1000).toFixed(2)} km<br><br>${html}`
-	            );
-	        }
-	    });
-	});
+	  // Get two closest stations
+	  const closest = rows.slice(0, 2);
+	
+	  const popupHTML = closest.map((s, i) => `
+	    <strong>Station ${i+1}</strong><br>
+	    ${s.StationName}<br>
+	    AQHI: ${s.Value}<br>
+	    Time: ${s.ReadingDate}<br>
+	    <hr>
+	  `).join("");
+	
+	  L.popup()
+	    .setLatLng([lat, lng])
+	    .setContent(popupHTML)
+	    .openOn(map);
 	}
 
 
 		
-        // Find closest PurpleAir sensor
-	const purpleSorted = purpleAirSensors.map(sensor => ({
-	    ...sensor,
-	    distance: getDistance(lat, lng, sensor.lat, sensor.lon)
-	})).sort((a, b) => a.distance - b.distance).slice(0, 2);
-	
-	purpleSorted.forEach(sensor => {
-	    const { lat, lon, name, pm25, distance } = sensor;
-	
-	    const marker = L.circleMarker([lat, lon], {
-	        radius: 8,
-	        fillColor: getPM25Color(pm25),
-	        color: getPM25Color(pm25),
-	        weight: 1,
-	        fillOpacity: 0.8,
-	    }).addTo(map).bindPopup(
-	        `<strong>Closest PurpleAir Sensor</strong><br>${name}<br>PM2.5: ${pm25.toFixed(1)} µg/m³<br>Distance: ${(distance / 1000).toFixed(2)} km`
-	    );
-	    existingMarkers.push(marker);
-	});
-
-
 		
     // Map click event
     map.on('click', async function (e) {
