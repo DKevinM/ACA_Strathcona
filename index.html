@@ -368,6 +368,7 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
 
         // Fetch PurpleAir data
         async function fetchPurpleAirData() {
+	return []; 
             const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
             const purpleAirUrl = `https://api.purpleair.com/v1/sensors?fields=name,latitude,longitude,pm2.5_60minute,humidity`;
 
