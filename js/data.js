@@ -310,11 +310,7 @@ return stationData
 .sort((a, b) => a.ParameterName.localeCompare(b.ParameterName));
 }
 
-function findAndDisplayClosest(lat, lng) {
-if (!recentData.length) {
-console.warn("No recent data loaded yet.");
-return;
-}
+
 
 // Filter AQHI-only data (ParameterName is blank)
 const aqhiByStation = {};
@@ -371,7 +367,12 @@ getDistance(lat, lng, b.Latitude, b.Longitude)
 
 const closest = sorted.slice(0, 2); // Get 2 closest stations
 
-
+function findAndDisplayClosest(lat, lng) {
+if (!recentData.length) {
+console.warn("No recent data loaded yet.");
+return;
+}
+	
 // Drop markers for both stations
 closest.forEach((s, i) => {
 const marker = L.marker([s.Latitude, s.Longitude])
