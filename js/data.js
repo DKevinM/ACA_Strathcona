@@ -11,7 +11,7 @@ const unitsLookup = {
   "Nitrogen Dioxide": "ppb", "Methane": "ppm"
 };
 
-const abbreviationLookup = {
+const abbrLookup = {
   "AQHI": "AQHI", "Ozone": "O₃", "Total Oxides of Nitrogen": "NOx",
   "Hydrogen Sulphide": "H₂S", "Total Reduced Sulphur": "TRS", "Sulphur Dioxide": "SO₂",
   "Fine Particulate Matter": "PM2.5", "Total Hydrocarbons": "THC", "Carbon Monoxide": "CO",
@@ -20,7 +20,7 @@ const abbreviationLookup = {
   "Nitrogen Dioxide": "NO₂", "Methane": "CH₄"
 };
 
-const shortformLookup = {
+const shortLookup = {
   "AQHI": "AQHI", "Ozone": "O3", "Total Oxides of Nitrogen": "NOX",
   "Hydrogen Sulphide": "H2S", "Total Reduced Sulphur": "TRS", "Sulphur Dioxide": "SO2",
   "Fine Particulate Matter": "PM2.5", "Total Hydrocarbons": "THC", "Carbon Monoxide": "CO",
@@ -33,60 +33,42 @@ fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.cs
   .then(res => res.text())
   .then(text => {
     const rows = text.trim().split('\n');
-    const headers = rows[0].split(',');
-    const rawData = {};
+    const headers = rows.shift().split(',');
 
-    rows.slice(1).forEach(line => {
+    const raw = {};
+    rows.forEach(line => {
       const cols = line.split(',');
-      const entry = Object.fromEntries(headers.map((h, i) => [h, cols[i]]));
-      if (!entry.Value || isNaN(entry.Latitude) || isNaN(entry.Longitude)) return;
+      const e = Object.fromEntries(headers.map((h,i)=>[h,cols[i]]));
+      if (!e.Latitude||!e.Longitude||isNaN(e.Latitude)||isNaN(e.Longitude)) return;
 
-      entry.ParameterName ||= "AQHI";
-      entry.Units = unitsLookup[entry.ParameterName] || "";
-      entry.Abbreviation = abbreviationLookup[entry.ParameterName] || "";
-      entry.Shortform = shortformLookup[entry.ParameterName] || "";
+      e.ParameterName = e.ParameterName||"AQHI";
+      e.Units = unitsLookup[e.ParameterName]||"";
+      e.Abbreviation = abbrLookup[e.ParameterName]||"";
+      e.Shortform = shortLookup[e.ParameterName]||"";
 
-      let value = parseFloat(entry.Value);
-      if (["Ozone", "Total Oxides of Nitrogen", "Hydrogen Sulphide", "Total Reduced Sulphur", "Sulphur Dioxide", "Nitric Oxide", "Nitrogen Dioxide"].includes(entry.ParameterName)) {
-        value *= 1000;
+      let v = parseFloat(e.Value);
+      if (["Ozone","Total Oxides of Nitrogen","Hydrogen Sulphide","Total Reduced Sulphur","Sulphur Dioxide","Nitric Oxide","Nitrogen Dioxide"].includes(e.ParameterName)) {
+        v *= 1000;
       }
+      if (isNaN(v)) return;
+      e.Value = v;
 
-      if (isNaN(value)) return;
-      entry.Value = value;
+      const utc = new Date(e.ReadingDate);
+      e.ReadingDate = utc.toLocaleString("en-CA",{ timeZone:"America/Edmonton" });
 
-      const utc = new Date(entry.ReadingDate);
-      entry.ReadingDate = utc.toLocaleString("en-CA", { timeZone: "America/Edmonton" });
-
-      if (!rawData[entry.StationName]) rawData[entry.StationName] = [];
-      rawData[entry.StationName].push(entry);
+      raw[e.StationName] = raw[e.StationName]||[];
+      raw[e.StationName].push(e);
     });
 
-    for (const station in rawData) {
-      const sorted = rawData[station].sort((a, b) => new Date(b.ReadingDate) - new Date(a.ReadingDate));
-      const latestTwo = sorted.slice(0, 2);
-      latestTwo.forEach(row => {
-        recentData.push(row);
-        if (!dataByStation[station]) dataByStation[station] = [];
-        dataByStation[station].push(row);
+    Object.entries(raw).forEach(([station, arr]) => {
+      arr.sort((a,b)=>new Date(b.ReadingDate)-new Date(a.ReadingDate));
+      const two = arr.slice(0,2);
+      two.forEach(e => {
+        recentData.push(e);
+        dataByStation[station] = dataByStation[station]||[];
+        dataByStation[station].push(e);
       });
-    }
+    });
 
-    console.log("✅ Loaded & processed latest station data.");
+    console.log("Data.js: loaded stations.");
   });
-
-function getLatestStationData(stationName) {
-  const stationEntries = dataByStation[stationName];
-  if (!stationEntries) return [];
-
-  const sorted = stationEntries
-    .filter(d => d.ParameterName !== "")
-    .sort((a, b) => new Date(b.ReadingDate) - new Date(a.ReadingDate));
-
-  const uniqueTimes = [...new Set(sorted.map(e => e.ReadingDate))];
-  for (let i = 0; i < 3 && i < uniqueTimes.length; i++) {
-    const time = uniqueTimes[i];
-    const rows = sorted.filter(e => e.ReadingDate === time);
-    if (rows.length > 0) return rows;
-  }
-  return [];
-}
