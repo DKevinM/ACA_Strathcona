@@ -18,6 +18,8 @@ const layerControl = L.control.layers(baseLayers, overlays).addTo(map);
 
 
 let existingMarkers = [];
+let purpleAirMarkers = [];
+
 const stationMarkers = [];
 
 function clearMap() {
@@ -25,26 +27,31 @@ function clearMap() {
     .forEach(m => map.removeLayer(m));
   existingMarkers = [];
   stationMarkers.length = 0;
+  purpleAirMarkers.forEach(m => map.removeLayer(m));
+  purpleAirMarkers = [];
   document.querySelector("#weather-info").innerHTML = "";
 }
 
-
+// Reset Map Button Handler
 document.getElementById('reset-button').addEventListener('click', () => {
   clearMap();
-  map.setView([53.5636, -113.1802], 9); // Reset view to default
+  map.setView([53.5636, -113.1802], 9); // Reset to default view
 });
 
-
+// Zoom to My Current Location Button Handler
 document.getElementById('location-button').addEventListener('click', function () {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       position => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
+
         map.setView([lat, lng], 15);
-        const marker = L.marker([lat, lng]).addTo(map)
-          .bindPopup("You are here!").openPopup();
-        existingMarkers.push(marker);
+        const marker = L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup("You are here!")
+          .openPopup();
+        existingMarkers.push(marker); // Optional: track this marker too
       },
       error => {
         console.error("Geolocation failed: ", error);
@@ -55,6 +62,7 @@ document.getElementById('location-button').addEventListener('click', function ()
     alert("Geolocation is not supported by your browser.");
   }
 });
+
 
 
 // Haversine formula
