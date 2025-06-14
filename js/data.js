@@ -70,5 +70,27 @@ fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.cs
       });
     });
 
-    console.log("Data.js: loaded stations.");
+
+window.fetchRecentStationData = function(stationName) {
+  if (!dataByStation[stationName]) {
+    return Promise.resolve("<b>No data found for this station.</b>");
+  }
+
+  const stationData = dataByStation[stationName];
+
+  const rows = stationData.map(row => {
+    const value = parseFloat(row.Value).toFixed(1);
+    const param = row.ParameterName;
+    const unit = row.Units || "";
+    return `<tr><td>${param}</td><td>${value}</td><td>${unit}</td></tr>`;
   });
+
+  const html = `
+    <table style="font-size:0.85em;width:100%;">
+      <tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>
+      ${rows.join("")}
+    </table>
+  `;
+
+  return Promise.resolve(html);
+};
