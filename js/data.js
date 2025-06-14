@@ -91,6 +91,6 @@ window.fetchRecentStationData = function(stationName) {
       ${rows.join("")}
     </table>
   `;
-
+}
   return Promise.resolve(html);
 };
