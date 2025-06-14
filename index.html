@@ -120,8 +120,13 @@
     
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script src="js/main.js?v=${Date.now()}"></script>
-<script src="js/data.js?v=${Date.now()}"></script>
-    
+
+<!-- Load Data First -->
+<script src="js/data.js?v=1"></script>
+<!-- Load PurpleAir Module -->
+<script src="js/purpleair.js?v=1"></script>
+<!-- Load Main Application Logic -->
+<script src="js/main.js?v=1"></script>
+
 </body>
 </html>
