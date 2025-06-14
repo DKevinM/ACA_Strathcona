@@ -1,6 +1,8 @@
 // data.js
 let recentData = [];
 let dataByStation = {};
+window.dataByStation = dataByStation; // if you want it global
+
 
 const unitsLookup = {
   "AQHI": "AQHI", "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb",
