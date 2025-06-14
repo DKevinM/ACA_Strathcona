@@ -1,4 +1,6 @@
 let purpleAirMarkers = [];
+window.purpleAirMarkers = purpleAirMarkers;
+
 
 // PM2.5 adjustment based on RH (with validation)
 function adjustPM25(pm25, rh) {
