@@ -192,21 +192,37 @@ map.on('click', async e => {
     .sort((a, b) => a.dist - b.dist)
     .slice(0, 2);
 
-  closest.forEach(st => {
-    const rows = dataByStation[st.StationName]
-      .map(r => `${r.Shortform}: ${r.Value}${r.Units}`)
-      .join('<br>');
-    const color = getAQHIColor(st.Value);
+closest.forEach(st => {
+  const rows = dataByStation[st.StationName]
+    .map(r => `${r.Shortform}: ${r.Value}${r.Units}`)
+    .join('<br>');
 
-    const circle = L.circle([st.Latitude, st.Longitude], {
-      radius: 500,
-      color,
-      fillColor: color,
-      fillOpacity: 0.5
-    }).bindPopup(`<strong>${st.StationName}</strong><br>${rows}`).addTo(map);
+  const color = getAQHIColor(st.Value);
 
-    stationMarkers.push(circle);
+  const circle = L.circleMarker([st.Latitude, st.Longitude], {
+    radius: 10,
+    color,
+    fillColor: color,
+    weight: 3,
+    fillOpacity: 0.8
+  }).addTo(map).bindPopup(
+    `<strong>${st.StationName}</strong><br>AQHI: ${st.Value}<br>Distance: ${(st.dist / 1000).toFixed(2)} km<br><em>Loading full station data...</em>`
+  ).openPopup();
+
+  stationMarkers.push(circle);
+
+  // Fetch full recent data for this AQHI station
+  fetchRecentStationData(st.StationName).then(html => {
+    if (circle.isPopupOpen()) {
+      circle.setPopupContent(
+        `<strong>${st.StationName}</strong><br>AQHI: ${st.Value}<br>Distance: ${(st.dist / 1000).toFixed(2)} km<br><br>${html}`
+      );
+    }
+  }).catch(err => {
+    console.error("Error loading station data:", err);
   });
+});
+
 
   // Weather data
   try {
