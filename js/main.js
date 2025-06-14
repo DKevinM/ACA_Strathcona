@@ -1,116 +1,127 @@
-let recentData = [];
-let dataByStation = {};
+// ------- Map Initialization -------
+const openStreetMapLayer = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { attribution: '&copy; OpenStreetMap contributors' }
+);
 
-const unitsLookup = {
-  "AQHI": "AQHI",
-  "Ozone": "ppb",
-  "Total Oxides of Nitrogen": "ppb",
-  "Hydrogen Sulphide": "ppb",
-  "Total Reduced Sulphur": "ppb",
-  "Sulphur Dioxide": "ppb",
-  "Fine Particulate Matter": "µg/m³",
-  "Total Hydrocarbons": "ppm",
-  "Carbon Monoxide": "ppm",
-  "Wind Direction": "degrees",
-  "Relative Humidity": "%",
-  "Outdoor Temperature": "°C",
-  "Nitric Oxide": "ppb",
-  "Wind Speed": "km/hr",
-  "Non-methane Hydrocarbons": "ppm",
-  "Nitrogen Dioxide": "ppb",
-  "Methane": "ppm"
-};
+const satelliteLayer = L.tileLayer(
+  'https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+  { subdomains: ['mt0','mt1','mt2','mt3'], attribution: '&copy; Google' }
+);
 
-const abbreviationLookup = {
-  "AQHI": "AQHI",
-  "Ozone": "O₃",
-  "Total Oxides of Nitrogen": "NOx",
-  "Hydrogen Sulphide": "H₂S",
-  "Total Reduced Sulphur": "TRS",
-  "Sulphur Dioxide": "SO₂",
-  "Fine Particulate Matter": "PM2.5",
-  "Total Hydrocarbons": "THC",
-  "Carbon Monoxide": "CO",
-  "Wind Direction": "wd",
-  "Relative Humidity": "RH",
-  "Outdoor Temperature": "ET",
-  "Nitric Oxide": "NO",
-  "Wind Speed": "ws",
-  "Non-methane Hydrocarbons": "NMHC",
-  "Nitrogen Dioxide": "NO₂",
-  "Methane": "CH₄"
-};
+const map = L.map('map', { layers: [openStreetMapLayer] })
+  .setView([53.56, -113.18], 9);
 
-const shortformLookup = {
-  "AQHI": "AQHI",
-  "Ozone": "O3",
-  "Total Oxides of Nitrogen": "NOX",
-  "Hydrogen Sulphide": "H2S",
-  "Total Reduced Sulphur": "TRS",
-  "Sulphur Dioxide": "SO2",
-  "Fine Particulate Matter": "PM2.5",
-  "Total Hydrocarbons": "THC",
-  "Carbon Monoxide": "CO",
-  "Wind Direction": "wd",
-  "Relative Humidity": "RH",
-  "Outdoor Temperature": "ET",
-  "Nitric Oxide": "NO",
-  "Wind Speed": "ws",
-  "Non-methane Hydrocarbons": "NMHC",
-  "Nitrogen Dioxide": "NO2",
-  "Methane": "CH4"
-};
+const layerControl = L.control.layers(
+  { 'OSM': openStreetMapLayer, 'Satellite': satelliteLayer },
+  {}
+).addTo(map);
 
-fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.csv')
-  .then(res => res.text())
-  .then(text => {
-    const rows = text.trim().split('\n');
-    const headers = rows[0].split(',');
-
-    const rawData = {};
-
-    rows.slice(1).forEach(line => {
-      const cols = line.split(',');
-      const entry = Object.fromEntries(headers.map((h, i) => [h, cols[i]]));
-
-      if (!entry.Latitude || !entry.Longitude || isNaN(entry.Latitude) || isNaN(entry.Longitude)) return;
-
-      entry.ParameterName = entry.ParameterName || "AQHI";
-      entry.Units = unitsLookup[entry.ParameterName] || "";
-      entry.Abbreviation = abbreviationLookup[entry.ParameterName] || "";
-      entry.Shortform = shortformLookup[entry.ParameterName] || "";
-
-      let value = parseFloat(entry.Value);
-      if (["Ozone", "Total Oxides of Nitrogen", "Hydrogen Sulphide", "Total Reduced Sulphur", "Sulphur Dioxide", "Nitric Oxide", "Nitrogen Dioxide"].includes(entry.ParameterName)) {
-        value *= 1000;
-      }
-      if (isNaN(value)) return;
-
-      entry.Value = value;
-
-      // Convert to Edmonton time
-      const utc = new Date(entry.ReadingDate);
-      entry.ReadingDate = utc.toLocaleString("en-CA", { timeZone: "America/Edmonton" });
-
-      const key = entry.StationName;
-      if (!rawData[key]) rawData[key] = [];
-      rawData[key].push(entry);
-    });
-
-    for (const station in rawData) {
-      // sort readings per station by datetime descending
-      const sorted = rawData[station].sort((a, b) => new Date(b.ReadingDate) - new Date(a.ReadingDate));
-
-      // keep only last 2 hours if AQHI present
-      const latestTwo = sorted.slice(0, 2).filter(d => d.Value !== undefined);
-      if (latestTwo.length) {
-        latestTwo.forEach(row => {
-          recentData.push(row);
-          if (!dataByStation[station]) dataByStation[station] = [];
-          dataByStation[station].push(row);
+// AQHI Grid Overlay
+fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid.geojson")
+  .then(r => r.json())
+  .then(data => {
+    const grid = L.geoJson(data, {
+      style: f => ({
+        fillColor: getColorgrid(f.properties.aqhi_str),
+        color: 'white', weight: 0.5, dashArray: '3', fillOpacity: 0.4
+      }),
+      onEachFeature: (f, l) => {
+        const c = getColorgrid(f.properties.aqhi_str);
+        l.bindTooltip(`<div style="color:${c};font-weight:bold">AQHI: ${f.properties.aqhi_str}</div>`, {
+          sticky: true, direction: 'top', opacity: 0.8
         });
       }
-    }
-
-    console.log("Parsed and filtered recent station data.");
+    }).addTo(map);
+    layerControl.addOverlay(grid, "Interpolated AQHI Grid");
   });
+
+// ------- State -------
+let existingMarkers = [];
+let stationMarkers = [];
+
+// ------- Utility Functions -------
+function clearAll() {
+  existingMarkers.forEach(m => map.removeLayer(m));
+  stationMarkers.forEach(m => map.removeLayer(m));
+  existingMarkers = [];
+  stationMarkers = [];
+  document.querySelector("#weather-info").innerHTML = '';
+}
+
+// Distance in meters
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3, toRad = x => x * Math.PI/180;
+  const dLat = toRad(lat2-lat1), dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function getAQHIColor(aqhi) {
+  const v = parseFloat(aqhi);
+  if (isNaN(v)) return "#808080";
+  const thresholds = [10,9,8,7,6,5,4,3,2,1];
+  const colors = ["#9a0100","#cc0001","#fe0002","#fd6866","#ff9835","#ffcb00","#fffe03","#016797","#0099cb","#01cbff"];
+  return colors[thresholds.findIndex(t => v>=t)] || "#01cbff";
+}
+
+// ------- Closest Stations & Popups -------
+function showClosest(lat, lon) {
+  if (!recentData.length) return;
+
+  const stations = Object.values(dataByStation).map(arr => arr[0]);
+  const sorted = stations
+    .map(s => ({...s, dist: getDistance(lat, lon, parseFloat(s.Latitude), parseFloat(s.Longitude))}))
+    .sort((a,b) => a.dist - b.dist)
+    .slice(0, 2);
+
+  sorted.forEach(st => {
+    const marker = L.circleMarker(
+      [st.Latitude, st.Longitude],
+      { radius: 10, fillColor: getAQHIColor(st.Value), color: "#333", weight: 1, fillOpacity: 0.8 }
+    ).addTo(map);
+
+    const rows = getLatestStationData(st.StationName)
+      .map(d => `<tr><td>${d.ParameterName}</td><td>${d.Value.toFixed(1)}</td></tr>`).join('');
+    const html = `<strong>${st.StationName}</strong><br>${st.ReadingDate}<br><table>${rows}</table>`;
+    marker.bindPopup(html);
+
+    stationMarkers.push(marker);
+  });
+}
+
+// ------- Click Event & Weather Fetch -------
+map.on('click', ({ latlng }) => {
+  clearAll();
+
+  const { lat, lng } = latlng;
+  const m = L.marker([lat, lng]).addTo(map);
+  m.bindPopup(`Selected: ${lat.toFixed(4)}, ${lng.toFixed(4)}`).openPopup();
+  existingMarkers.push(m);
+
+  showClosest(lat, lng);
+
+  fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weathercode&timezone=America%2FEdmonton`)
+    .then(r => r.json())
+    .then(w => {
+      const now = new Date().toLocaleString('en-CA', { timeZone: 'America/Edmonton' });
+      const i = w.hourly.time.findIndex(t => t.startsWith(now.slice(0,13)));
+      const mod = i < 0 ? 0 : i;
+
+      const info = [
+        ["Temp", w.hourly.temperature_2m[mod]+" °C"],
+        ["RH", w.hourly.relative_humidity_2m[mod]+" %"],
+        ["Wind", w.hourly.wind_speed_10m[mod]+" km/h"]
+      ].map(r => `<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td></tr>`).join('');
+
+      document.querySelector("#weather-info").innerHTML = `
+        <h3>Weather (local)</h3><table>${info}</table>`;
+    });
+});
+
+// ------- Locate Button -------
+document.getElementById('location-button').addEventListener('click', () => {
+  navigator.geolocation.getCurrentPosition(p => {
+    map.setView([p.coords.latitude, p.coords.longitude], 14);
+  });
+});
