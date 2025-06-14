@@ -1,3 +1,15 @@
+const baseLayers = {
+  "OpenStreetMap": openStreetMapLayer
+};
+
+const overlays = {
+  "AQHI Grid": aqhiGridLayer,
+  "Weather Stations": weatherLayer
+};
+
+const layerControl = L.control.layers(baseLayers, overlays).addTo(map);
+
+
 const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
 });
