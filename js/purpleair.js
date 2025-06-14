@@ -89,23 +89,22 @@ function showPurpleAir(clickLat, clickLon) {
     if (!sensors.length) return;
 
     // Show 3 closest sensors
-    const top3 = sensors.slice(0, 3);
-    top3.forEach(s => {
-      const marker = L.circleMarker([s.lat, s.lon], {
-        radius: 8,
-        fillColor: getPM25Color(s.pm25),
-        color: "#000",
-        fillOpacity: 0.85,
-        weight: 1
-      }).bindPopup(
-        `<b>PurpleAir Sensor</b><br>
-         Name: ${s.name}<br>
-         PM₂.₅: ${s.pm25.toFixed(1)} µg/m³<br>
-         RH: ${s.rh.toFixed(1)}%<br>
-         Distance: ${(s.dist / 1000).toFixed(2)} km`
-      ).addTo(map);
+top3.forEach(s => {
+  const corrected = correctPM25(s.pm25, s.rh);
+  const marker = L.circleMarker([s.lat, s.lon], {
+    radius: 8,
+    fillColor: getPM25Color(corrected),
+    color: "#000",
+    fillOpacity: 0.75,
+    weight: 1
+  }).bindPopup(
+    `<b>PurpleAir Sensor</b><br>
+     Name: ${s.name}<br>
+     PM2.5 (Corrected): ${corrected.toFixed(1)} µg/m³<br>
+     Distance: ${(s.dist / 1000).toFixed(2)} km`
+  ).addTo(map);
 
-      purpleAirMarkers.push(marker);
+  purpleAirMarkers.push(marker);
     });
 
     // Optional: highlight the closest one differently
