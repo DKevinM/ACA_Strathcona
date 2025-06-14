@@ -371,7 +371,7 @@ function findAndDisplayClosest(lat, lng) {
 if (!recentData.length) {
 console.warn("No recent data loaded yet.");
 return;
-}
+}}
 	
 // Drop markers for both stations
 closest.forEach((s, i) => {
