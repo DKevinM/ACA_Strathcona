@@ -1,9 +1,15 @@
 const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
 });
-const map = L.map('map', { layers: [openStreetMapLayer] }).setView([53.5636, -113.1802], 9);
+const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: '&copy; Google'
+});
+
+const map = L.map('map', { layers: [openStreetMapLayer, satelliteLayer ] }).setView([53.5636, -113.1802], 9);
 const baseLayers = {
-  "OpenStreetMap": openStreetMapLayer
+  "OpenStreetMap": openStreetMapLayer,
+  'Satellite': satelliteLayer
 };
 
 const overlays = {};
