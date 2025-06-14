@@ -18,17 +18,15 @@ const layerControl = L.control.layers(baseLayers, overlays).addTo(map);
 
 
 let existingMarkers = [];
-let purpleAirMarkers = [];
 
 const stationMarkers = [];
 
 function clearMap() {
-  existingMarkers.concat(stationMarkers, purpleAirMarkers)
-    .forEach(m => map.removeLayer(m));
+  const allMarkers = existingMarkers.concat(stationMarkers, window.purpleAirMarkers || []);
+  allMarkers.forEach(m => map.removeLayer(m));
   existingMarkers = [];
   stationMarkers.length = 0;
-  purpleAirMarkers.forEach(m => map.removeLayer(m));
-  purpleAirMarkers = [];
+  window.purpleAirMarkers = [];
   document.querySelector("#weather-info").innerHTML = "";
 }
 
