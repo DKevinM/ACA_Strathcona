@@ -343,6 +343,9 @@ return entries.filter(e => e.ReadingDate === latestTime);
 }
 
 
+const closest = sorted.slice(0, 2);
+
+
 document.querySelector("#station-info").innerHTML = `
 <h4>Closest Stations Summary</h4>
 ${closest.map((s, i) => {
@@ -365,7 +368,7 @@ getDistance(lat, lng, a.Latitude, a.Longitude) -
 getDistance(lat, lng, b.Latitude, b.Longitude)
 );
 
-const closest = sorted.slice(0, 2); // Get 2 closest stations
+
 
 function findAndDisplayClosest(lat, lng) {
 if (!recentData.length) {
