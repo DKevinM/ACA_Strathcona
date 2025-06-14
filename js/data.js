@@ -357,7 +357,7 @@ return `
 `;
 }).join("")}
 `;
-}
+
 
 // Sort by distance from click
 const sorted = Object.values(dataByStation).sort((a, b) =>
