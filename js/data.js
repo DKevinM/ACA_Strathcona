@@ -335,13 +335,6 @@ window.closestStationMarkers.forEach(m => map.removeLayer(m));
 window.closestStationMarkers = [];
 
 
-// Drop markers for both stations
-closest.forEach((s, i) => {
-const marker = L.marker([s.Latitude, s.Longitude])
-.addTo(map)
-.bindPopup(`<strong>${s.StationName}</strong><br>AQHI: ${s.Value}`);
-window.closestStationMarkers.push(marker);
-});
 
 
 function getLatestStationData(stationName) {
@@ -377,6 +370,16 @@ getDistance(lat, lng, b.Latitude, b.Longitude)
 );
 
 const closest = sorted.slice(0, 2); // Get 2 closest stations
+
+
+// Drop markers for both stations
+closest.forEach((s, i) => {
+const marker = L.marker([s.Latitude, s.Longitude])
+.addTo(map)
+.bindPopup(`<strong>${s.StationName}</strong><br>AQHI: ${s.Value}`);
+window.closestStationMarkers.push(marker);
+});
+
 
 const html = closest.map((s, i) => {
 const fullData = getLatestStationData(s.StationName);
