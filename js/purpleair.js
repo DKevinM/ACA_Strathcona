@@ -90,9 +90,11 @@ function showPurpleAir(clickLat, clickLon) {
   fetchPurpleAirData(clickLat, clickLon).then(sensors => {
     if (!sensors.length) return;
 
+ const top3 = sensors.slice(0, 3);
+
     // Show 3 closest sensors
 top3.forEach(s => {
-  const corrected = correctPM25(s.pm25, s.rh);
+  const corrected = adjustPM25(s.pm25, s.rh);
   const marker = L.circleMarker([s.lat, s.lon], {
     radius: 5,
     fillColor: getPM25Color(corrected),
