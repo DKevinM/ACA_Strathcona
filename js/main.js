@@ -1,6 +1,9 @@
-const map = L.map('map', {
-  layers: [openStreetMapLayer]
-}).setView([53.5636, -113.1802], 9);
+const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+});
+
+const map = L.map('map', { layers: [openStreetMapLayer] }).setView([53.5636, -113.1802], 9);
+
 layerControl.addTo(map);
 
 let existingMarkers = [];
