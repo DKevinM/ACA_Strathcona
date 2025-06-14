@@ -247,7 +247,7 @@ closest.forEach(st => {
   stationMarkers.push(circle);
 
   // Fetch full recent data for this AQHI station
-  fetchRecentStationData(st.StationName).then(html => {
+  window.fetchRecentStationData(st.StationName).then(html => {
     if (circle.isPopupOpen()) {
       circle.setPopupContent(
         `<strong>${st.StationName}</strong><br>AQHI: ${st.Value}<br>Distance: ${(st.dist / 1000).toFixed(2)} km<br><br>${html}`
