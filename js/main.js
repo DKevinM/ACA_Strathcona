@@ -35,6 +35,28 @@ document.getElementById('reset-button').addEventListener('click', () => {
 });
 
 
+document.getElementById('location-button').addEventListener('click', function () {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        map.setView([lat, lng], 15);
+        const marker = L.marker([lat, lng]).addTo(map)
+          .bindPopup("You are here!").openPopup();
+        existingMarkers.push(marker);
+      },
+      error => {
+        console.error("Geolocation failed: ", error);
+        alert("Unable to access your location. Please check your browser settings.");
+      }
+    );
+  } else {
+    alert("Geolocation is not supported by your browser.");
+  }
+});
+
+
 // Haversine formula
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371e3;
