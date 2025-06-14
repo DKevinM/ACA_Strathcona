@@ -28,6 +28,13 @@ function clearMap() {
   document.querySelector("#weather-info").innerHTML = "";
 }
 
+
+document.getElementById('reset-button').addEventListener('click', () => {
+  clearMap();
+  map.setView([53.5636, -113.1802], 9); // Reset view to default
+});
+
+
 // Haversine formula
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371e3;
