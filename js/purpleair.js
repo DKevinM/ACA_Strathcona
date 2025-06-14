@@ -82,7 +82,7 @@ async function fetchPurpleAirData(clickLat, clickLon) {
 }
 
 // Add PurpleAir markers to map
-function showPurpleAir(clickLat, clickLon) {
+window.showPurpleAir = function(clickLat, clickLon) {
   // Clear previous markers
   purpleAirMarkers.forEach(m => map.removeLayer(m));
   purpleAirMarkers = [];
