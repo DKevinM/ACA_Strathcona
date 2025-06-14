@@ -1,7 +1,7 @@
 // data.js
 let recentData = [];
 let dataByStation = {};
-window.dataByStation = dataByStation; // if you want it global
+window.dataByStation = dataByStation; 
 
 
 const unitsLookup = {
@@ -71,6 +71,7 @@ fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.cs
         dataByStation[station].push(e);
       });
     });
+  });
 
 
 window.fetchRecentStationData = function(stationName) {
@@ -93,6 +94,6 @@ window.fetchRecentStationData = function(stationName) {
       ${rows.join("")}
     </table>
   `;
-}
+
   return Promise.resolve(html);
 };
