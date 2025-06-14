@@ -1,22 +1,15 @@
+const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+});
+const map = L.map('map', { layers: [openStreetMapLayer] }).setView([53.5636, -113.1802], 9);
 const baseLayers = {
   "OpenStreetMap": openStreetMapLayer
 };
 
-const overlays = {
-  "AQHI Grid": aqhiGridLayer,
-  "Weather Stations": weatherLayer
-};
+const overlays = {};
 
 const layerControl = L.control.layers(baseLayers, overlays).addTo(map);
 
-
-const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-});
-
-const map = L.map('map', { layers: [openStreetMapLayer] }).setView([53.5636, -113.1802], 9);
-
-layerControl.addTo(map);
 
 let existingMarkers = [];
 const stationMarkers = [];
