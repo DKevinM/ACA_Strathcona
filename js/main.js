@@ -263,16 +263,23 @@ window.fetchRecentStationData(st.StationName).then(html => {
   stationMarkers.push(circle);
 
   // Fetch full recent data for this AQHI station
-  window.fetchRecentStationData(st.StationName).then(html => {
-    if (circle.isPopupOpen()) {
-      circle.setPopupContent(
-        `<strong>${st.StationName}</strong><br>AQHI: ${st.Value}<br>Distance: ${(st.dist / 1000).toFixed(2)} km<br><br>${html}`
-      );
-    }
-  }).catch(err => {
+window.fetchRecentStationData(st.StationName)
+  .then(html => {
+    circle.bindTooltip(
+      `<strong>${st.StationName}</strong><br>
+       Last Updated: ${st.ReadingDate}<br>
+       AQHI: ${st.Value}<br>
+       Distance: ${(st.dist / 1000).toFixed(2)} km<br><br>${html}`,
+      {
+        sticky: true,
+        direction: 'top',
+        opacity: 0.9
+      }
+    ).openTooltip();
+  })
+  .catch(err => {
     console.error("Error loading station data:", err);
   });
-});
 
 
   // Weather data
