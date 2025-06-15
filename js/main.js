@@ -24,10 +24,10 @@ const stationMarkers = [];
 function clearMap() {
   const allMarkers = existingMarkers.concat(stationMarkers, window.purpleAirMarkers || []);
   allMarkers.forEach(m => map.removeLayer(m));
+
   existingMarkers = [];
   stationMarkers.length = 0;
-  window.purpleAirMarkers = [];
-  document.querySelector("#weather-info").innerHTML = "";
+  window.purpleAirMarkers = [];  // Critical line
 }
 
 // Reset Map Button Handler
