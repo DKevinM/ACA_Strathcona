@@ -235,14 +235,20 @@ closest.forEach(st => {
   const color = getAQHIColor(st.Value);
 
   const circle = L.circleMarker([st.Latitude, st.Longitude], {
-    radius: 10,
-    color,
+    radius: 15,
+    color: "#000",
     fillColor: color,
     weight: 3,
     fillOpacity: 0.8
-  }).addTo(map).bindPopup(
-    `<strong>${st.StationName}</strong><br>AQHI: ${st.Value}<br>Distance: ${(st.dist / 1000).toFixed(2)} km<br><em>Loading full station data...</em>`
-  ).openPopup();
+circle.bindTooltip(
+  `<strong>${st.StationName}</strong><br>AQHI: ${st.Value}<br>Distance: ${(st.dist / 1000).toFixed(2)} km`,
+  {
+    sticky: true,
+    direction: 'top',
+    opacity: 0.9
+  }
+).openTooltip();
+
 
   stationMarkers.push(circle);
 
