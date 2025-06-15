@@ -101,6 +101,7 @@ top3.forEach(s => {
     color: "#000",
     fillOpacity: 0.75,
     weight: 1
+    })
     .bindTooltip(
       `<b>PurpleAir</b><br>${s.name}<br>PM2.5: ${corrected.toFixed(1)} µg/m³<br>${(s.dist / 1000).toFixed(2)} km`,
       {
@@ -109,7 +110,7 @@ top3.forEach(s => {
         opacity: 0.9
       }
     )
-  ).addTo(map);
+    .addTo(map);
 
   purpleAirMarkers.push(marker);
     });
