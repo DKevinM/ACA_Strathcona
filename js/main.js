@@ -212,13 +212,19 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
   });
 
 // On map click
-map.on('click', async e => {
-  clearMap();
-  const { lat, lng } = e.latlng;
+map.on('click', function (e) {
+  (async function () {
+    const { lat, lng } = e.latlng;
 
-  const marker = L.marker([lat, lng]).addTo(map);
-  existingMarkers.push(marker);
-  marker.bindPopup(`Your location<br>Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`).openPopup();
+    clearMap();
+
+    const marker = L.marker([lat, lng]).addTo(map);
+    existingMarkers.push(marker);
+    marker.bindTooltip(`Your location<br>Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`, {
+      sticky: true,
+      direction: 'top',
+      opacity: 0.9
+    }).openTooltip();
 
   // Nearest AQHI stations
   const closest = Object.values(dataByStation)
