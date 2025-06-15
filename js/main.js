@@ -233,21 +233,31 @@ closest.forEach(st => {
     .join('<br>');
 
   const color = getAQHIColor(st.Value);
+const circle = L.circleMarker([st.Latitude, st.Longitude], {
+  radius: 15,
+  color: "#000",
+  fillColor: color,
+  weight: 3,
+  fillOpacity: 0.8
+}).addTo(map);
 
-  const circle = L.circleMarker([st.Latitude, st.Longitude], {
-    radius: 15,
-    color: "#000",
-    fillColor: color,
-    weight: 3,
-    fillOpacity: 0.8
-circle.bindTooltip(
-  `<strong>${st.StationName}</strong><br>AQHI: ${st.Value}<br>Distance: ${(st.dist / 1000).toFixed(2)} km`,
-  {
-    sticky: true,
-    direction: 'top',
-    opacity: 0.9
-  }
-).openTooltip();
+stationMarkers.push(circle);  // Optional, if you want to track markers
+
+window.fetchRecentStationData(st.StationName).then(html => {
+  circle.bindTooltip(
+    `<strong>${st.StationName}</strong><br>
+     AQHI: ${st.Value}<br>
+     Distance: ${(st.dist / 1000).toFixed(2)} km<br><br>
+     ${html}`,
+    {
+      sticky: true,
+      direction: 'top',
+      opacity: 0.9
+    }
+  ).openTooltip();
+}).catch(err => {
+  console.error("Error loading station data:", err);
+});
 
 
   stationMarkers.push(circle);
