@@ -246,14 +246,18 @@ const circle = L.circleMarker([st.Latitude, st.Longitude], {
   fillColor: color,
   weight: 3,
   fillOpacity: 0.8
-      }).bindTooltip(
-        `<strong>${st.StationName}</strong><br>${rows}<br>Distance: ${(st.dist / 1000).toFixed(2)} km`,
-        { sticky: true, direction: 'top', opacity: 0.9 }
-      ).addTo(map).openTooltip();
+}).addTo(map);
 
-      stationMarkers.push(circle);
-    });
+// Use your custom data formatting function for tooltip
+window.fetchRecentStationData(st.StationName).then(html => {
+  circle.bindTooltip(html, {
+    sticky: true,
+    direction: 'top',
+    opacity: 0.95
+  });
+});
 
+stationMarkers.push(circle);
 
   // Weather data
     try {
