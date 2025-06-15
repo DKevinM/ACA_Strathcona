@@ -5,7 +5,7 @@ window.dataByStation = dataByStation;
 
 
 const unitsLookup = {
-  "AQHI": "AQHI", "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb",
+  "AQHI": "", "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb",
   "Hydrogen Sulphide": "ppb", "Total Reduced Sulphur": "ppb", "Sulphur Dioxide": "ppb",
   "Fine Particulate Matter": "µg/m³", "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm",
   "Wind Direction": "degrees", "Relative Humidity": "%", "Outdoor Temperature": "°C",
@@ -78,11 +78,29 @@ fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.cs
 
 
 window.fetchRecentStationData = function(stationName) {
-  const stationData = dataByStation[stationName];
-  if (!stationData || stationData.length === 0) {
+  if (!dataByStation[stationName]) {
     return Promise.resolve("<b>No data found for this station.</b>");
   }
 
+  const stationData = dataByStation[stationName];
+
+  const orderedParams = [
+    "AQHI", "Outdoor Temperature", "Relative Humidity", "Wind Speed", "Wind Direction", 
+    "Nitrogen Dioxide", "Total Oxides of Nitrogen", "Nitric Oxide", "Ozone",
+    "Fine Particulate Matter", "Sulphur Dioxide", "Hydrogen Sulphide", "Total Reduced Sulphur",
+    "Carbon Monoxide", "Total Hydrocarbons", "Methane", "Non-methane Hydrocarbons"  
+  ];
+
+  const paramLookup = {};
+  stationData.forEach(r => {
+    paramLookup[r.ParameterName] = r;
+  });
+  
+  const timestamp = new Date(stationData[0].ReadingDate).toLocaleString("en-CA", {
+    timeZone: "America/Edmonton",
+    hour12: true
+  });
+  
     // Group by ParameterName, keep latest
   const latestPerParam = {};
   stationData.forEach(row => {
@@ -96,19 +114,24 @@ window.fetchRecentStationData = function(stationName) {
   const aqhiRow = latestPerParam["AQHI"];
   const aqhiValue = aqhiRow ? parseFloat(aqhiRow.Value).toFixed(1) : "N/A";
 
-  // Build table
-  const rows = Object.values(latestPerParam).map(row => {
-    const value = parseFloat(row.Value).toFixed(1);
-    const unit = row.Units || "";
-    return `<tr><td>${row.ParameterName}</td><td>${value}</td><td>${unit}</td></tr>`;
-  });
 
+  const rows = orderedParams
+    .filter(p => paramLookup[p])
+    .map(p => {
+      const r = paramLookup[p];
+      const label = r.Shortform || p;
+      const value = r.Value;
+      const unit = r.Units || "";
+      return `${label}: ${value}${unit}`;
+    });
+  
   const html = `
-    <b>AQHI: ${aqhiValue}</b><br>
-    <table style="font-size:0.85em;width:100%;">
-      <tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>
-      ${rows.join("")}
-    </table>
+    <div style="font-size:0.9em;">
+      <strong>${stationName}</strong><br>
+      <small><em>${timestamp}</em></small><br>
+      AQHI: ${paramLookup["AQHI"] ? paramLookup["AQHI"].Value + "AQHI" : "n/a"}<br>
+      ${rows.join("<br>")}
+    </div>
   `;
 
   return Promise.resolve(html);
