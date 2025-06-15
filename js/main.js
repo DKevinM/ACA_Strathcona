@@ -234,9 +234,6 @@ map.on('click', function (e) {
     .slice(0, 2);
 
     closest.forEach(st => {
-      const rows = dataByStation[st.StationName]
-        .map(r => `${r.Shortform}: ${r.Value}${r.Units} (${r.ReadingDate})`)
-        .join('<br>');
 
   const color = getAQHIColor(st.Value);
 
@@ -250,10 +247,8 @@ const circle = L.circleMarker([st.Latitude, st.Longitude], {
 
 // Use your custom data formatting function for tooltip
 window.fetchRecentStationData(st.StationName).then(html => {
-  circle.bindTooltip(html, {
-    sticky: true,
-    direction: 'top',
-    opacity: 0.95
+circle.bindPopup(html, {
+  maxWidth: 300
   });
 });
 
