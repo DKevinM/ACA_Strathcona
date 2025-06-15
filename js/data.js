@@ -64,12 +64,15 @@ fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.cs
 
     Object.entries(raw).forEach(([station, arr]) => {
       arr.sort((a,b)=>new Date(b.ReadingDate)-new Date(a.ReadingDate));
-      const two = arr.slice(0,2);
-      two.forEach(e => {
-        recentData.push(e);
-        dataByStation[station] = dataByStation[station]||[];
-        dataByStation[station].push(e);
+      const byParam = {};
+      arr.forEach(e => {
+        const param = e.ParameterName;
+        if (!byParam[param] || new Date(e.ReadingDate) > new Date(byParam[param].ReadingDate)) {
+          byParam[param] = e;
+        }
       });
+      dataByStation[station] = Object.values(byParam);
+      recentData.push(...dataByStation[station]);
     });
   });
 
