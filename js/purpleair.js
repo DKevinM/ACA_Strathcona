@@ -122,7 +122,6 @@ top3.forEach(s => {
       color: getPM25Color(closest.pm25),
       fillOpacity: 0,
       weight: 2,
-      dashArray: '4'
     }).addTo(map);
 
     purpleAirMarkers.push(closestMarker);
