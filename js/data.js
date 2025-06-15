@@ -75,20 +75,33 @@ fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.cs
 
 
 window.fetchRecentStationData = function(stationName) {
-  if (!dataByStation[stationName]) {
+  const stationData = dataByStation[stationName];
+  if (!stationData || stationData.length === 0) {
     return Promise.resolve("<b>No data found for this station.</b>");
   }
 
-  const stationData = dataByStation[stationName];
-
-  const rows = stationData.map(row => {
-    const value = parseFloat(row.Value).toFixed(1);
+    // Group by ParameterName, keep latest
+  const latestPerParam = {};
+  stationData.forEach(row => {
     const param = row.ParameterName;
+    if (!latestPerParam[param] || new Date(row.ReadingDate) > new Date(latestPerParam[param].ReadingDate)) {
+      latestPerParam[param] = row;
+    }
+  });
+  
+  // Optional: extract AQHI separately
+  const aqhiRow = latestPerParam["AQHI"];
+  const aqhiValue = aqhiRow ? parseFloat(aqhiRow.Value).toFixed(1) : "N/A";
+
+  // Build table
+  const rows = Object.values(latestPerParam).map(row => {
+    const value = parseFloat(row.Value).toFixed(1);
     const unit = row.Units || "";
-    return `<tr><td>${param}</td><td>${value}</td><td>${unit}</td></tr>`;
+    return `<tr><td>${row.ParameterName}</td><td>${value}</td><td>${unit}</td></tr>`;
   });
 
   const html = `
+    <b>AQHI: ${aqhiValue}</b><br>
     <table style="font-size:0.85em;width:100%;">
       <tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>
       ${rows.join("")}
