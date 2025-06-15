@@ -101,11 +101,14 @@ top3.forEach(s => {
     color: "#000",
     fillOpacity: 0.75,
     weight: 1
-  }).bindPopup(
-    `<b>PurpleAir Sensor</b><br>
-     Name: ${s.name}<br>
-     PM2.5 (Corrected): ${corrected.toFixed(1)} µg/m³<br>
-     Distance: ${(s.dist / 1000).toFixed(2)} km`
+    .bindTooltip(
+      `<b>PurpleAir</b><br>${s.name}<br>PM2.5: ${corrected.toFixed(1)} µg/m³<br>${(s.dist / 1000).toFixed(2)} km`,
+      {
+        sticky: true,
+        direction: 'top',
+        opacity: 0.9
+      }
+    )
   ).addTo(map);
 
   purpleAirMarkers.push(marker);
