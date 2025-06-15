@@ -96,7 +96,7 @@ window.showPurpleAir = function(clickLat, clickLon) {
 top3.forEach(s => {
   const corrected = adjustPM25(s.pm25, s.rh);
   const marker = L.circleMarker([s.lat, s.lon], {
-    radius: 5,
+    radius: 7.5,
     fillColor: getPM25Color(corrected),
     color: "#000",
     fillOpacity: 0.75,
