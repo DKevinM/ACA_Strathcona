@@ -116,9 +116,9 @@ window.fetchRecentStationData = function(stationName) {
 
 
   const rows = orderedParams
-    .filter(p => latestPerParam[p])
-    .map(p => {
-      const r = latestPerParam[p];
+  .filter(p => latestPerParam[p])
+  .map(p => {
+    const r = latestPerParam[p];
       const label = r.Shortform || p;
       const value = r.Value;
       const unit = r.Units || "";
