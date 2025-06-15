@@ -213,9 +213,9 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
 
 // On map click
 map.on('click', function (e) {
-  (async function () {
-    const { lat, lng } = e.latlng;
+  const { lat, lng } = e.latlng;
 
+  (async function () {
     clearMap();
 
     const marker = L.marker([lat, lng]).addTo(map);
@@ -233,70 +233,39 @@ map.on('click', function (e) {
     .sort((a, b) => a.dist - b.dist)
     .slice(0, 2);
 
-closest.forEach(st => {
-  const rows = dataByStation[st.StationName]
-    .map(r => `${r.Shortform}: ${r.Value}${r.Units}`)
-    .join('<br>');
+    closest.forEach(st => {
+      const rows = dataByStation[st.StationName]
+        .map(r => `${r.Shortform}: ${r.Value}${r.Units} (${r.ReadingDate})`)
+        .join('<br>');
 
   const color = getAQHIColor(st.Value);
+
 const circle = L.circleMarker([st.Latitude, st.Longitude], {
   radius: 15,
   color: "#000",
   fillColor: color,
   weight: 3,
   fillOpacity: 0.8
-}).addTo(map);
+      }).bindTooltip(
+        `<strong>${st.StationName}</strong><br>${rows}<br>Distance: ${(st.dist / 1000).toFixed(2)} km`,
+        { sticky: true, direction: 'top', opacity: 0.9 }
+      ).addTo(map).openTooltip();
 
-stationMarkers.push(circle);  // Optional, if you want to track markers
-
-window.fetchRecentStationData(st.StationName).then(html => {
-  circle.bindTooltip(
-    `<strong>${st.StationName}</strong><br>
-     AQHI: ${st.Value}<br>
-     Distance: ${(st.dist / 1000).toFixed(2)} km<br><br>
-     ${html}`,
-    {
-      sticky: true,
-      direction: 'top',
-      opacity: 0.9
-    }
-  ).openTooltip();
-}).catch(err => {
-  console.error("Error loading station data:", err);
-});
-
-
-  stationMarkers.push(circle);
-
-  // Fetch full recent data for this AQHI station
-window.fetchRecentStationData(st.StationName)
-  .then(html => {
-    circle.bindTooltip(
-      `<strong>${st.StationName}</strong><br>
-       Last Updated: ${st.ReadingDate}<br>
-       AQHI: ${st.Value}<br>
-       Distance: ${(st.dist / 1000).toFixed(2)} km<br><br>${html}`,
-      {
-        sticky: true,
-        direction: 'top',
-        opacity: 0.9
-      }
-    ).openTooltip();
-  })
-  .catch(err => {
-    console.error("Error loading station data:", err);
-  });
+      stationMarkers.push(circle);
+    });
 
 
   // Weather data
-  try {
-    const wresp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=America%2FEdmonton`);
-    const wdata = await wresp.json();
-    showWeather(wdata);
-  } catch (err) {
-    console.error("Error fetching weather data", err);
-  }
+    try {
+      const wresp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=America%2FEdmonton`);
+      const wdata = await wresp.json();
+      showWeather(wdata);
+    } catch (err) {
+      console.error("Error fetching weather data", err);
+    }
 
-  // PurpleAir
-  showPurpleAir(lat, lng);
+    // --- PurpleAir ---
+    showPurpleAir(lat, lng);
+
+  })(); // End async IIFE
 });
