@@ -59,15 +59,21 @@ async function fetchPurpleAirData(clickLat, clickLon) {
     const data = await resp.json();
 
     
-    return data.data.map(s => {
-      const name = s[0];
-      const last_modified = s[1];
-      const lat = parseFloat(s[2]);
-      const lon = parseFloat(s[3]);
-      const pm25_raw = parseFloat(s[4]);
-      const rh = parseFloat(s[5]);
-      const dist = getDistance(clickLat, clickLon, lat, lon);
-    
+  return data.data.map(s => {
+    // Map field names to values using the index in `fields`
+    const get = fieldName => {
+      const index = fields.indexOf(fieldName);
+      return index !== -1 ? s[index] : null;
+    };
+  
+    const name = get("name");
+    const last_modified = get("last_modified");
+    const lat = parseFloat(get("latitude"));
+    const lon = parseFloat(get("longitude"));
+    const pm25_raw = parseFloat(get("pm2.5_60minute"));
+    const rh = parseFloat(get("humidity"));
+    const dist = getDistance(clickLat, clickLon, lat, lon);
+
       return {
         name,
         last_modified,
