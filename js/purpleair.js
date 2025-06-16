@@ -78,7 +78,10 @@ async function fetchPurpleAirData(clickLat, clickLon) {
         dist
       };
     });
-
+  } catch (err) {
+    console.error("Error fetching PurpleAir data:", err);
+    return [];
+  }
 
 // Add PurpleAir markers to map
 window.showPurpleAir = function(clickLat, clickLon) {
@@ -87,7 +90,8 @@ window.showPurpleAir = function(clickLat, clickLon) {
   purpleAirMarkers = [];
 
   fetchPurpleAirData(clickLat, clickLon).then(sensors => {
-      console.log("Returned PurpleAir sensors:", sensors); // ← this logs all sensors
+    console.log("Returned PurpleAir sensors:", sensors); // Debug log
+    
     if (!sensors.length) return;
 
  const top3 = sensors.slice(0, 3);
