@@ -5,7 +5,7 @@ window.dataByStation = dataByStation;
 
 
 const unitsLookup = {
-  "AQHI": "", "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb",
+  "AQHI": " ", "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb",
   "Hydrogen Sulphide": "ppb", "Total Reduced Sulphur": "ppb", "Sulphur Dioxide": "ppb",
   "Fine Particulate Matter": "µg/m³", "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm",
   "Wind Direction": "degrees", "Relative Humidity": "%", "Outdoor Temperature": "°C",
@@ -96,39 +96,45 @@ window.fetchRecentStationData = function(stationName) {
     paramLookup[r.ParameterName] = r;
   });
 
-
+  
   const rawTime = stationData[0]?.ReadingDate;
   const timestamp = rawTime ? new Date(rawTime).toLocaleString("en-CA", {
     timeZone: "America/Edmonton",
     hour12: true
   }) : "Invalid Date";
-console.log("Timestamp raw value:", rawTime);
 
-
-  
-    // Group by ParameterName, keep latest
-  const latestPerParam = {};
-  stationData.forEach(row => {
-    const param = row.ParameterName;
-    if (!latestPerParam[param] || new Date(row.ReadingDate) > new Date(latestPerParam[param].ReadingDate)) {
-      latestPerParam[param] = row;
-    }
-  });
-  
-  // Optional: extract AQHI separately
-  const aqhiRow = latestPerParam["AQHI"];
-  const aqhiValue = aqhiRow ? parseFloat(aqhiRow.Value).toFixed(1) : "N/A";
+  const shortformOverride = {
+    "Outdoor Temperature": "Temp",
+    "Relative Humidity": "Humidity",
+    "Wind Speed": "Wind Speed",
+    "Wind Direction": "Wind Dir"
+  };
 
   
-const rows = orderedParams
-  .filter(p => paramLookup[p] && p !== "AQHI")
-  .map(p => {
-    const r = paramLookup[p];
-    const label = r.Shortform || p;
-    const value = r.Value;
-    const unit = r.Units || "";
-    return `${label}: ${value}${unit}`;
-  });
+  const rows = orderedParams
+    .filter(p => paramLookup[p] && p !== "AQHI")
+    .map(p => {
+      const r = paramLookup[p];
+      const label = shortformOverride[p] || r.Shortform || p;
+      const value = r.Value;
+      const unit = r.Units || "";
+      return `${label}: ${value}${unit}`;
+    });
+
+  
+  const aqhiValue = paramLookup["AQHI"]?.Value || "N/A";
+
+  const html = `
+    <div style="font-size:0.9em;">
+      <strong>${stationName}</strong><br>
+      <small><em>${timestamp}</em></small><br>
+      AQHI: ${aqhiValue}<br>
+      ${rows.join("<br>")}
+    </div>
+  `;
+
+  return Promise.resolve(html);
+};
 
   
   const html = `
