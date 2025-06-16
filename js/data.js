@@ -136,15 +136,3 @@ window.fetchRecentStationData = function(stationName) {
   return Promise.resolve(html);
 };
 
-  
-  const html = `
-    <div style="font-size:0.9em;">
-      <strong>${stationName}</strong><br>
-      <small><em>${timestamp}</em></small><br>
-      AQHI: ${paramLookup["AQHI"] ? paramLookup["AQHI"].Value + "AQHI" : "n/a"}<br>
-      ${rows.join("<br>")}
-    </div>
-  `;
-
-  return Promise.resolve(html);
-};
