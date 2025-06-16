@@ -49,7 +49,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
 // Fetch PurpleAir sensors and compute distances
 async function fetchPurpleAirData(clickLat, clickLon) {
   const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
-  const url = 'https://api.purpleair.com/v1/sensors?fields=name,latitude,longitude,pm2.5_60minute,humidity';
+  const url = 'https://api.purpleair.com/v1/sensors?fields=name,last_modified,latitude,longitude,pm2.5_60minute,humidity';
 
   try {
     const resp = await fetch(url, {
@@ -58,28 +58,27 @@ async function fetchPurpleAirData(clickLat, clickLon) {
 
     const data = await resp.json();
 
+    
     return data.data.map(s => {
-      const pm25 = parseFloat(s[4]);
-      const rh = parseFloat(s[5]);
-      const adjusted = adjustPM25(pm25, rh);
+      const name = s[0];
+      const last_modified = s[1];
       const lat = parseFloat(s[2]);
       const lon = parseFloat(s[3]);
-
+      const pm25_raw = parseFloat(s[4]);
+      const rh = parseFloat(s[5]);
+      const dist = getDistance(clickLat, clickLon, lat, lon);
+    
       return {
-        name: s[1],
+        name,
+        last_modified,
         lat,
         lon,
         rh,
-        pm25: adjusted,
-        dist: getDistance(clickLat, clickLon, lat, lon)
+        pm25_raw,
+        dist
       };
-    }).filter(s => !isNaN(s.dist) && s.pm25 !== null)
-      .sort((a, b) => a.dist - b.dist);
-  } catch (err) {
-    console.error("Error fetching PurpleAir data:", err);
-    return [];
-  }
-}
+    });
+
 
 // Add PurpleAir markers to map
 window.showPurpleAir = function(clickLat, clickLon) {
@@ -93,37 +92,32 @@ window.showPurpleAir = function(clickLat, clickLon) {
  const top3 = sensors.slice(0, 3);
 
     // Show 3 closest sensors
-top3.forEach(s => {
-  const corrected = adjustPM25(s.pm25, s.rh);
-  const marker = L.circleMarker([s.lat, s.lon], {
-    radius: 10,
-    fillColor: getPM25Color(corrected),
-    color: "#000",
-    fillOpacity: 0.75,
-    weight: 1
-    })
-    .bindTooltip(
-      `<b>PurpleAir</b><br>${s.name}<br>PM2.5: ${corrected.toFixed(1)} µg/m³<br>${(s.dist / 1000).toFixed(2)} km`,
-      {
-        sticky: true,
-        direction: 'top',
-        opacity: 0.9
-      }
-    )
-    .addTo(map);
-
-  purpleAirMarkers.push(marker);
+    top3.forEach(s => {
+      const corrected = adjustPM25(s.pm25_raw, s.rh);
+      const timeStr = new Date(s.last_modified * 1000).toLocaleString("en-CA", {
+        timeZone: "America/Edmonton",
+        hour12: true
+      });
+    
+      const marker = L.circleMarker([s.lat, s.lon], {
+        radius: 10,
+        fillColor: getPM25Color(corrected),
+        color: "#000",
+        fillOpacity: 0.75,
+        weight: 1
+      })
+      .bindTooltip(
+        `<b>PurpleAir</b><br>${s.name}<br>PM2.5: ${corrected.toFixed(1)} µg/m³<br>RH: ${s.rh}%<br>Time: ${timeStr}<br>${(s.dist / 1000).toFixed(2)} km`,
+        {
+          sticky: true,
+          direction: 'top',
+          opacity: 0.9
+        }
+      )
+      .addTo(map);
+    
+      purpleAirMarkers.push(marker);
     });
 
-    // Optional: highlight the closest one differently
-    const closest = sensors[0];
-    const closestMarker = L.circle([closest.lat, closest.lon], {
-      radius: 300,
-      color: getPM25Color(closest.pm25),
-      fillOpacity: 0,
-      weight: 2,
-    }).addTo(map);
-
-    purpleAirMarkers.push(closestMarker);
   });
 }
