@@ -145,4 +145,3 @@ window.fetchRecentStationData = function (stationName) {
 
   return Promise.resolve(html);
 };
-
