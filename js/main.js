@@ -233,35 +233,33 @@ map.on('click', function (e) {
     .sort((a, b) => a.dist - b.dist)
     .slice(0, 2);
 
-    closest.forEach(st => {
-
+for (const st of closest) {
   const color = getAQHIColor(st.Value);
 
-const circle = L.circleMarker([st.Latitude, st.Longitude], {
-  radius: 15,
-  color: "#000",
-  fillColor: color,
-  weight: 3,
-  fillOpacity: 0.8
-}).addTo(map);
+  const circle = L.circleMarker([st.Latitude, st.Longitude], {
+    radius: 15,
+    color: "#000",
+    fillColor: color,
+    weight: 3,
+    fillOpacity: 0.8
+  }).addTo(map);
 
-// Use your custom data formatting function for tooltip
-window.fetchRecentStationData(st.StationName).then(html => {
-circle.bindPopup(html, {
-  maxWidth: 300
+  window.fetchRecentStationData(st.StationName).then(html => {
+    circle.bindPopup(html, { maxWidth: 300 });
   });
-});
 
-stationMarkers.push(circle);
+  stationMarkers.push(circle);
+}
 
-  // Weather data
-    try {
-      const wresp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=America%2FEdmonton`);
-      const wdata = await wresp.json();
-      showWeather(wdata);
-    } catch (err) {
-      console.error("Error fetching weather data", err);
-    }
+// Weather data (outside the loop)
+try {
+  const wresp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=America%2FEdmonton`);
+  const wdata = await wresp.json();
+  showWeather(wdata);
+} catch (err) {
+  console.error("Error fetching weather data", err);
+}
+
 
     // --- PurpleAir ---
     showPurpleAir(lat, lng);
