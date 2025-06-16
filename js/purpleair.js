@@ -51,19 +51,19 @@ async function fetchPurpleAirData(clickLat, clickLon) {
   const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
   const url = 'https://api.purpleair.com/v1/sensors?fields=name,last_modified,latitude,longitude,pm2.5_60minute,humidity';
 
-  try {
+ try {
     const resp = await fetch(url, {
       headers: { 'X-API-Key': API_KEY }
     });
 
     const data = await resp.json();
+    const fields = data.fields;  // ✅ Declare this right after data is available
+    console.log("Returned field order:", fields);
 
-    
-  return data.data.map(s => {
-    // Map field names to values using the index in `fields`
-    const get = fieldName => {
+    // Helper to access field by name
+    const get = (row, fieldName) => {
       const index = fields.indexOf(fieldName);
-      return index !== -1 ? s[index] : null;
+      return index !== -1 ? row[index] : null;
     };
   
     const name = get("name");
