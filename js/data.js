@@ -88,8 +88,6 @@ window.fetchRecentStationData = function (stationName) {
     .map(row => new Date(row.ReadingDate))
     .sort((a, b) => b - a)[0]
     .toLocaleString("en-CA", { timeZone: "America/Edmonton" });
-  
-  const stationData = dataByStation[stationName];
 
   const orderedParams = [
     "AQHI", "Outdoor Temperature", "Relative Humidity", "Wind Speed", "Wind Direction", 
