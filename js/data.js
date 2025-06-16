@@ -96,7 +96,10 @@ window.fetchRecentStationData = function(stationName) {
     paramLookup[r.ParameterName] = r;
   });
 
-  
+
+  console.log("ReadingDate:", rawTime);
+  console.log("Parsed Date:", new Date(rawTime));
+
   const rawTime = stationData[0]?.ReadingDate;
   const timestamp = rawTime ? new Date(rawTime).toLocaleString("en-CA", {
     timeZone: "America/Edmonton",
