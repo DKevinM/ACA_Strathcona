@@ -87,6 +87,7 @@ window.showPurpleAir = function(clickLat, clickLon) {
   purpleAirMarkers = [];
 
   fetchPurpleAirData(clickLat, clickLon).then(sensors => {
+      console.log("Returned PurpleAir sensors:", sensors); // ← this logs all sensors
     if (!sensors.length) return;
 
  const top3 = sensors.slice(0, 3);
