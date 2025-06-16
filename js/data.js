@@ -77,11 +77,18 @@ fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.cs
   });
 
 
-window.fetchRecentStationData = function(stationName) {
-  if (!dataByStation[stationName]) {
-    return Promise.resolve("<b>No data found for this station.</b>");
+window.fetchRecentStationData = function (stationName) {
+  const stationData = dataByStation[stationName];
+  if (!stationData || stationData.length === 0) {
+    return Promise.resolve(`<b>No recent data for ${stationName}.</b>`);
   }
 
+    // Get latest timestamp from any record
+  const latestTimestamp = stationData
+    .map(row => new Date(row.ReadingDate))
+    .sort((a, b) => b - a)[0]
+    .toLocaleString("en-CA", { timeZone: "America/Edmonton" });
+  
   const stationData = dataByStation[stationName];
 
   const orderedParams = [
@@ -113,7 +120,7 @@ window.fetchRecentStationData = function(stationName) {
     "Wind Direction": "Wind Dir"
   };
 
-  
+
   const rows = orderedParams
     .filter(p => paramLookup[p] && p !== "AQHI")
     .map(p => {
