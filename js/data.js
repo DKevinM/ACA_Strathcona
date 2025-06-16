@@ -102,9 +102,6 @@ window.fetchRecentStationData = function (stationName) {
   });
 
 
-  console.log("ReadingDate:", rawTime);
-  console.log("Parsed Date:", new Date(rawTime));
-
   const rawTime = stationData[0]?.ReadingDate;
   const timestamp = rawTime ? new Date(rawTime).toLocaleString("en-CA", {
     timeZone: "America/Edmonton",
