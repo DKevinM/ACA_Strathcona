@@ -82,6 +82,7 @@ async function fetchPurpleAirData(clickLat, clickLon) {
     console.error("Error fetching PurpleAir data:", err);
     return [];
   }
+}
 
 // Add PurpleAir markers to map
 window.showPurpleAir = function(clickLat, clickLon) {
