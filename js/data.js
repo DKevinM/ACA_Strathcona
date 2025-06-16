@@ -95,11 +95,16 @@ window.fetchRecentStationData = function(stationName) {
   stationData.forEach(r => {
     paramLookup[r.ParameterName] = r;
   });
-  
-  const timestamp = new Date(stationData[0].ReadingDate).toLocaleString("en-CA", {
+
+
+  const rawTime = stationData[0]?.ReadingDate;
+  const timestamp = rawTime ? new Date(rawTime).toLocaleString("en-CA", {
     timeZone: "America/Edmonton",
     hour12: true
-  });
+  }) : "Invalid Date";
+console.log("Timestamp raw value:", rawTime);
+
+
   
     // Group by ParameterName, keep latest
   const latestPerParam = {};
@@ -114,16 +119,17 @@ window.fetchRecentStationData = function(stationName) {
   const aqhiRow = latestPerParam["AQHI"];
   const aqhiValue = aqhiRow ? parseFloat(aqhiRow.Value).toFixed(1) : "N/A";
 
-
-  const rows = orderedParams
-  .filter(p => latestPerParam[p])
+  
+const rows = orderedParams
+  .filter(p => paramLookup[p] && p !== "AQHI")
   .map(p => {
-    const r = latestPerParam[p];
-      const label = r.Shortform || p;
-      const value = r.Value;
-      const unit = r.Units || "";
-      return `${label}: ${value}${unit}`;
-    });
+    const r = paramLookup[p];
+    const label = r.Shortform || p;
+    const value = r.Value;
+    const unit = r.Units || "";
+    return `${label}: ${value}${unit}`;
+  });
+
   
   const html = `
     <div style="font-size:0.9em;">
