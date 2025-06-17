@@ -51,49 +51,48 @@ async function fetchPurpleAirData(clickLat, clickLon) {
   const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
   const url = 'https://api.purpleair.com/v1/sensors?fields=name,last_modified,latitude,longitude,pm2.5_60minute,humidity';
 
-    try {
-      const resp = await fetch(url, {
-        headers: { 'X-API-Key': API_KEY }
-      });
-      // You can optionally process the response here
-    } catch (err) {
-      console.error("Error fetching:", err);
-    }
-
+  try {
+    const resp = await fetch(url, {
+      headers: { 'X-API-Key': API_KEY }
+    });
 
     const data = await resp.json();
-    const fields = data.fields;  // ✅ Declare this right after data is available
+    const fields = data.fields;
+    const rows = data.data;
+
     console.log("Returned field order:", fields);
 
-    // Helper to access field by name
     const get = (row, fieldName) => {
       const index = fields.indexOf(fieldName);
       return index !== -1 ? row[index] : null;
     };
-  
-    const name = get("name");
-    const last_modified = get("last_modified");
-    const lat = parseFloat(get("latitude"));
-    const lon = parseFloat(get("longitude"));
-    const pm25_raw = parseFloat(get("pm2.5_60minute"));
-    const rh = parseFloat(get("humidity"));
-    const dist = getDistance(clickLat, clickLon, lat, lon);
 
-      return {
-        name,
-        last_modified,
-        lat,
-        lon,
-        rh,
-        pm25_raw,
-        dist
-      };
-    });
+    // Map and filter valid sensors
+    const sensors = rows.map(row => {
+      const name = get(row, "name");
+      const last_modified = get(row, "last_modified");
+      const lat = parseFloat(get(row, "latitude"));
+      const lon = parseFloat(get(row, "longitude"));
+      const pm25_raw = parseFloat(get(row, "pm2.5_60minute"));
+      const rh = parseFloat(get(row, "humidity"));
+      const dist = getDistance(clickLat, clickLon, lat, lon);
+
+      if (!isNaN(lat) && !isNaN(lon) && !isNaN(pm25_raw)) {
+        return { name, last_modified, lat, lon, rh, pm25_raw, dist };
+      } else {
+        return null;
+      }
+    }).filter(x => x !== null);
+
+    // Sort by distance and return
+    return sensors.sort((a, b) => a.dist - b.dist);
+
   } catch (err) {
     console.error("Error fetching PurpleAir data:", err);
     return [];
   }
 }
+
 
 // Add PurpleAir markers to map
 window.showPurpleAir = function(clickLat, clickLon) {
