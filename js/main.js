@@ -268,7 +268,8 @@ async function renderClickData(lat, lng) {
     .slice(0, 2);
 
   for (const st of closest) {
-    const color = getAQHIColor(st.Value);
+    const aqhiVal = parseFloat(st.Value);
+    const color = getAQHIColor(aqhiVal);
 
     const circle = L.circleMarker([st.Latitude, st.Longitude], {
       radius: 15,
