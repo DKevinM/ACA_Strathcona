@@ -102,15 +102,23 @@ window.fetchRecentStationData = function (stationName) {
   });
 
 
-  let parsedTime;
-  if (rawTime) {
-    // Convert to ISO if needed (e.g., "2024-06-16 12:00:00" → "2024-06-16T12:00:00")
-    const isoString = rawTime.includes("T") ? rawTime : rawTime.replace(" ", "T");
-    parsedTime = new Date(isoString);
-  }
-  const timestamp = parsedTime && !isNaN(parsedTime.getTime())
-    ? parsedTime.toLocaleString("en-CA", { timeZone: "America/Edmonton", hour12: true })
-    : "Invalid Date";
+    const rawTime = stationData[0]?.ReadingDate;
+    let parsedTime = null;
+    
+    if (rawTime) {
+      const isoString = rawTime.includes("T") ? rawTime : rawTime.replace(" ", "T");
+      parsedTime = new Date(isoString);
+    }
+    
+    const timestamp = parsedTime && !isNaN(parsedTime.getTime())
+      ? parsedTime.toLocaleString("en-CA", {
+          timeZone: "America/Edmonton",
+          hour12: true
+        })
+      : "Invalid Date";
+    
+    console.log("Timestamp:", timestamp);
+
   
   
     const shortformOverride = {
