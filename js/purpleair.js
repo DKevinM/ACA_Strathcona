@@ -49,7 +49,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
 // Fetch PurpleAir sensors and compute distances
 async function fetchPurpleAirData(clickLat, clickLon) {
   const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
-  const url = 'https://api.purpleair.com/v1/sensors?fields=name,last_modified,latitude,longitude,pm2.5_60minute,humidity';
+  const url = 'https://api.purpleair.com/v1/sensors?fields=name,last_seen,latitude,longitude,pm2.5_60minute,humidity';
 
   try {
     const resp = await fetch(url, {
@@ -70,7 +70,7 @@ async function fetchPurpleAirData(clickLat, clickLon) {
     // Map and filter valid sensors
     const sensors = rows.map(row => {
       const name = get(row, "name");
-      const last_modified = get(row, "last_modified");
+      const last_seen = get(row, "last_seen");
       const lat = parseFloat(get(row, "latitude"));
       const lon = parseFloat(get(row, "longitude"));
       const pm25_raw = parseFloat(get(row, "pm2.5_60minute"));
@@ -78,7 +78,7 @@ async function fetchPurpleAirData(clickLat, clickLon) {
       const dist = getDistance(clickLat, clickLon, lat, lon);
 
       if (!isNaN(lat) && !isNaN(lon) && !isNaN(pm25_raw)) {
-        return { name, last_modified, lat, lon, rh, pm25_raw, dist };
+        return { name, last_seen, lat, lon, rh, pm25_raw, dist };
       } else {
         return null;
       }
@@ -111,7 +111,7 @@ window.showPurpleAir = function(clickLat, clickLon) {
     top3.forEach(s => {
       const corrected = adjustPM25(s.pm25_raw, s.rh);
     
-      const timeStr = new Date(s.last_modified * 1000).toLocaleString("en-CA", {
+      const timeStr = new Date(s.last_seen * 1000).toLocaleString("en-CA", {
         timeZone: "America/Edmonton",
         hour12: false,  // change to true for AM/PM
         year: "numeric",
