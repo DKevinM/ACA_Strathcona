@@ -56,14 +56,21 @@ fetch('https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/last6h.cs
       e.Value = v;
 
       const utc = new Date(e.ReadingDate);
-      e.ReadingDate = utc.toLocaleString("en-CA",{ timeZone:"America/Edmonton" });
+      e.DisplayDate = utc.toLocaleString("en-CA", {
+        timeZone: "America/Edmonton",
+        hour12: true
+      });
+      
+      // Keep original ReadingDate as valid ISO string or Date object
+      e.ReadingDate = utc.toISOString();
+
 
       raw[e.StationName] = raw[e.StationName]||[];
       raw[e.StationName].push(e);
     });
 
     Object.entries(raw).forEach(([station, arr]) => {
-      arr.sort((a,b)=>new Date(b.ReadingDate)-new Date(a.ReadingDate));
+      arr.sort((a, b) => new Date(b.ReadingDate) - new Date(a.ReadingDate));
       const byParam = {};
       arr.forEach(e => {
         const param = e.ParameterName;
