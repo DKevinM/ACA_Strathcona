@@ -54,6 +54,9 @@ async function fetchPurpleAirData(clickLat, clickLon) {
  try {
     const resp = await fetch(url, {
       headers: { 'X-API-Key': API_KEY }
+      } catch (err) {
+      console.error("Error fetching:", err);
+      }
     });
 
     const data = await resp.json();
