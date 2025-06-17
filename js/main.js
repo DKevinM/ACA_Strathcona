@@ -235,17 +235,19 @@ map.on('click', async function (e) {
     .then(data => {
       const address = data.display_name || "No address found";
       console.log("Reverse geocoded address:", address);
-
+  
       // Optional: Attach popup to the location
-      L.popup()
-        .setLatLng([lat, lng])
-        .setContent(`<b>Address:</b><br>${address}`)
-    .openOn(map);
-  }, 500);
+      setTimeout(() => {
+        L.popup()
+          .setLatLng([lat, lng])
+          .setContent(`<b>Address:</b><br>${address}`)
+          .openOn(map);
+      }, 500);
+    })
     .catch(err => {
       console.error("Reverse geocoding error:", err);
     });
-});
+
   
 async function renderClickData(lat, lng) {
   // Add marker at clicked point
