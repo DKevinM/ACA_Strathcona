@@ -247,6 +247,7 @@ map.on('click', async function (e) {
     .catch(err => {
       console.error("Reverse geocoding error:", err);
     });
+  });
 
   
 async function renderClickData(lat, lng) {
