@@ -23,8 +23,14 @@ const stationMarkers = [];
 
 
 function clearMap() {
-  location.reload();
+  const allMarkers = existingMarkers.concat(stationMarkers, window.purpleAirMarkers || []);
+  allMarkers.forEach(m => map.removeLayer(m));
+
+  existingMarkers = [];
+  stationMarkers.length = 0;
+  window.purpleAirMarkers = [];
 }
+
 
 // Reset Map Button Handler
 document.getElementById('reset-button').addEventListener('click', () => {
@@ -211,17 +217,17 @@ let hasClickedBefore = false;
 let lastClickedLatLng = null;
 
 // On map click
-map.on('click', function (e) {
+map.on('click', async function (e) {
   const { lat, lng } = e.latlng;
   lastClickedLatLng = { lat, lng };
 
   if (hasClickedBefore) {
     clearMap();
+    await renderClickData(lat, lng);  // Ensure execution continues only after rendering is done
+  } else {
+    hasClickedBefore = true;
+    await renderClickData(lat, lng);  // First render without clearing
   }
-
-  hasClickedBefore = true;
-
-  renderClickData(lat, lng);
 });
   
 async function renderClickData(lat, lng) {
