@@ -207,12 +207,19 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
     layerControl.addOverlay(grid, "Interpolated AQHI Grid");
   });
 
+
+let hasClickedBefore = false;
+
+
 // On map click
 map.on('click', function (e) {
   const { lat, lng } = e.latlng;
 
   (async function () {
-    clearMap();
+    if (hasClickedBefore) {
+      clearMap();  // ← Only clear from second click onward
+    }
+    hasClickedBefore = true;
 
     const marker = L.marker([lat, lng]).addTo(map);
     existingMarkers.push(marker);
@@ -222,43 +229,43 @@ map.on('click', function (e) {
       opacity: 0.9
     }).openTooltip();
 
-  // Nearest AQHI stations
-  const closest = Object.values(dataByStation)
-    .map(arr => arr[0])
-    .map(r => ({ ...r, dist: getDistance(lat, lng, r.Latitude, r.Longitude) }))
-    .sort((a, b) => a.dist - b.dist)
-    .slice(0, 2);
+    // AQHI station logic
+    const closest = Object.values(dataByStation)
+      .map(arr => arr[0])
+      .map(r => ({ ...r, dist: getDistance(lat, lng, r.Latitude, r.Longitude) }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 2);
 
-for (const st of closest) {
-  const color = getAQHIColor(st.Value);
+    for (const st of closest) {
+      const color = getAQHIColor(st.Value);
 
-  const circle = L.circleMarker([st.Latitude, st.Longitude], {
-    radius: 15,
-    color: "#000",
-    fillColor: color,
-    weight: 3,
-    fillOpacity: 0.8
-  }).addTo(map);
+      const circle = L.circleMarker([st.Latitude, st.Longitude], {
+        radius: 15,
+        color: "#000",
+        fillColor: color,
+        weight: 3,
+        fillOpacity: 0.8
+      }).addTo(map);
 
-  window.fetchRecentStationData(st.StationName).then(html => {
-    circle.bindPopup(html, { maxWidth: 300 });
-  });
+      window.fetchRecentStationData(st.StationName).then(html => {
+        circle.bindPopup(html, { maxWidth: 300 });
+      });
 
-  stationMarkers.push(circle);
-}
+      stationMarkers.push(circle);
+    }
 
-// Weather data (outside the loop)
-try {
-  const wresp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=America%2FEdmonton`);
-  const wdata = await wresp.json();
-  showWeather(wdata);
-} catch (err) {
-  console.error("Error fetching weather data", err);
-}
+    // Weather
+    try {
+      const wresp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=America%2FEdmonton`);
+      const wdata = await wresp.json();
+      showWeather(wdata);
+    } catch (err) {
+      console.error("Error fetching weather data", err);
+    }
 
-
-    // --- PurpleAir ---
+    // PurpleAir
     showPurpleAir(lat, lng);
 
   })(); // End async IIFE
 });
+
