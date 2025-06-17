@@ -21,13 +21,9 @@ let existingMarkers = [];
 
 const stationMarkers = [];
 
-function clearMap() {
-  const allMarkers = existingMarkers.concat(stationMarkers, window.purpleAirMarkers || []);
-  allMarkers.forEach(m => map.removeLayer(m));
 
-  existingMarkers = [];
-  stationMarkers.length = 0;
-  window.purpleAirMarkers = [];  // Critical line
+function clearMap() {
+  location.reload();
 }
 
 // Reset Map Button Handler
