@@ -93,8 +93,10 @@ window.fetchRecentStationData = function (stationName) {
     // Get latest timestamp from any record
   const latestTimestamp = stationData
     .map(row => new Date(row.ReadingDate))
+    .filter(d => !isNaN(d))  // Filter out invalid dates just in case
     .sort((a, b) => b - a)[0]
-    .toLocaleString("en-CA", { timeZone: "America/Edmonton" });
+    .toLocaleString("en-CA", { timeZone: "America/Edmonton", hour12: true });
+
 
   const orderedParams = [
     "AQHI", "Outdoor Temperature", "Relative Humidity", "Wind Speed", "Wind Direction", 
