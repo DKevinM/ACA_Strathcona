@@ -115,8 +115,7 @@ const rawTime = stationData[0]?.ReadingDate;
 
 let parsedTime = null;
 if (rawTime) {
-  const isoLike = rawTime.includes("T") ? rawTime : rawTime.replace(" ", "T");
-  parsedTime = new Date(isoLike);
+  parsedTime = new Date(rawTime);  // Don't replace or modify
 }
 
 const timestamp = parsedTime && !isNaN(parsedTime.getTime())
