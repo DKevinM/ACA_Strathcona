@@ -209,18 +209,23 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid
 
 
 let hasClickedBefore = false;
-
+let lastClickedLatLng = null;
 
 // On map click
 map.on('click', function (e) {
   const { lat, lng } = e.latlng;
 
+  // Store where the user clicked
+  lastClickedLatLng = { lat, lng };
+  
   (async function () {
     if (hasClickedBefore) {
       clearMap();  // ← Only clear from second click onward
     }
     hasClickedBefore = true;
 
+    console.log("Clicked location:", lastClickedLatLng.lat, lastClickedLatLng.lng);
+    
     const marker = L.marker([lat, lng]).addTo(map);
     existingMarkers.push(marker);
     marker.bindTooltip(`Your location<br>Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`, {
