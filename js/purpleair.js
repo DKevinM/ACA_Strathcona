@@ -110,9 +110,16 @@ window.showPurpleAir = function(clickLat, clickLon) {
     // Show 3 closest sensors
     top3.forEach(s => {
       const corrected = adjustPM25(s.pm25_raw, s.rh);
+    
       const timeStr = new Date(s.last_modified * 1000).toLocaleString("en-CA", {
         timeZone: "America/Edmonton",
-        hour12: true
+        hour12: false,  // change to true for AM/PM
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
       });
     
       const marker = L.circleMarker([s.lat, s.lon], {
