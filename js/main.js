@@ -78,17 +78,17 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 function getAQHIColor(aqhi) {
-  if (!aqhi || isNaN(aqhi)) return "#808080";
   const value = parseFloat(aqhi);
+  if (isNaN(value)) return "#808080";
   if (value >= 10) return "#9a0100";
-  if (value === 9) return "#cc0001";
-  if (value === 8) return "#fe0002";
-  if (value === 7) return "#fd6866";
-  if (value === 6) return "#ff9835";
-  if (value === 5) return "#ffcb00";
-  if (value === 4) return "#fffe03";
-  if (value === 3) return "#016797";
-  if (value === 2) return "#0099cb";
+  if (value >= 9) return "#cc0001";
+  if (value >= 8) return "#fe0002";
+  if (value >= 7) return "#fd6866";
+  if (value >= 6) return "#ff9835";
+  if (value >= 5) return "#ffcb00";
+  if (value >= 4) return "#fffe03";
+  if (value >= 3) return "#016797";
+  if (value >= 2) return "#0099cb";
   return "#01cbff";
 }
 
