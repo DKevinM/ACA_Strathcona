@@ -103,22 +103,18 @@ window.fetchRecentStationData = function (stationName) {
 
 
     const rawTime = stationData[0]?.ReadingDate;
-    let parsedTime = null;
     
+    let parsedTime = null;
     if (rawTime) {
-      const isoString = rawTime.includes("T") ? rawTime : rawTime.replace(" ", "T");
-      parsedTime = new Date(isoString);
+      const isoLike = rawTime.includes("T") ? rawTime : rawTime.replace(" ", "T");
+      parsedTime = new Date(isoLike);
     }
     
     const timestamp = parsedTime && !isNaN(parsedTime.getTime())
-      ? parsedTime.toLocaleString("en-CA", {
-          timeZone: "America/Edmonton",
-          hour12: true
-        })
+      ? parsedTime.toLocaleString("en-CA", { timeZone: "America/Edmonton", hour12: true })
       : "Invalid Date";
     
     console.log("Timestamp:", timestamp);
-
   
   
     const shortformOverride = {
