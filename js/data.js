@@ -5,12 +5,12 @@ window.dataByStation = dataByStation;
 
 
 const unitsLookup = {
-  "AQHI": " ", "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb",
-  "Hydrogen Sulphide": "ppb", "Total Reduced Sulphur": "ppb", "Sulphur Dioxide": "ppb",
-  "Fine Particulate Matter": "µg/m³", "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm",
-  "Wind Direction": "degrees", "Relative Humidity": "%", "Outdoor Temperature": "°C",
-  "Nitric Oxide": "ppb", "Wind Speed": "km/hr", "Non-methane Hydrocarbons": "ppm",
-  "Nitrogen Dioxide": "ppb", "Methane": "ppm"
+  "AQHI": " ", "Ozone": " ppb", "Total Oxides of Nitrogen": " ppb",
+  "Hydrogen Sulphide": " ppb", "Total Reduced Sulphur": " ppb", "Sulphur Dioxide": " ppb",
+  "Fine Particulate Matter": " µg/m³", "Total Hydrocarbons": " ppm", "Carbon Monoxide": " ppm",
+  "Wind Direction": " degrees", "Relative Humidity": " %", "Outdoor Temperature": " °C",
+  "Nitric Oxide": " ppb", "Wind Speed": " km/hr", "Non-methane Hydrocarbons": " ppm",
+  "Nitrogen Dioxide": " ppb", "Methane": " ppm"
 };
 
 const abbrLookup = {
@@ -102,18 +102,23 @@ window.fetchRecentStationData = function (stationName) {
   });
 
 
-  const rawTime = stationData[0]?.ReadingDate;
-  const timestamp = rawTime ? new Date(rawTime).toLocaleString("en-CA", {
-    timeZone: "America/Edmonton",
-    hour12: true
-  }) : "Invalid Date";
-
-  const shortformOverride = {
-    "Outdoor Temperature": "Temp",
-    "Relative Humidity": "Humidity",
-    "Wind Speed": "Wind Speed",
-    "Wind Direction": "Wind Dir"
-  };
+  let parsedTime;
+  if (rawTime) {
+    // Convert to ISO if needed (e.g., "2024-06-16 12:00:00" → "2024-06-16T12:00:00")
+    const isoString = rawTime.includes("T") ? rawTime : rawTime.replace(" ", "T");
+    parsedTime = new Date(isoString);
+  }
+  const timestamp = parsedTime && !isNaN(parsedTime.getTime())
+    ? parsedTime.toLocaleString("en-CA", { timeZone: "America/Edmonton", hour12: true })
+    : "Invalid Date";
+  
+  
+    const shortformOverride = {
+      "Outdoor Temperature": "Temp",
+      "Relative Humidity": "Humidity",
+      "Wind Speed": "Wind Speed",
+      "Wind Direction": "Wind Dir"
+    };
 
 
   const rows = orderedParams
