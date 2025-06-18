@@ -262,13 +262,17 @@ async function renderClickData(lat, lng) {
 
   // AQHI stations
   const closest = Object.values(dataByStation)
-    .map(arr => arr[0])
+      .map(arr => {
+        const aqhiObj = arr.find(d => d.ParameterName === "AQHI");
+        return aqhiObj || arr[0]; // fallback just in case
+      })
     .map(r => ({ ...r, dist: getDistance(lat, lng, r.Latitude, r.Longitude) }))
     .sort((a, b) => a.dist - b.dist)
     .slice(0, 2);
 
   for (const st of closest) {
     const aqhiVal = parseFloat(st.Value);
+      console.log(`Station: ${st.StationName}, AQHI: ${aqhiVal}`);
     const color = getAQHIColor(aqhiVal);
 
     const circle = L.circleMarker([st.Latitude, st.Longitude], {
