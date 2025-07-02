@@ -32,4 +32,5 @@ jobs:
           git config user.email "github-actions@github.com"
           git add data/purpleair_data.json
           git commit -m "Update PurpleAir data" || echo "No changes to commit"
+          git push https://${{ secrets.PA_ACTION }}@github.com/DKevinM/ACA_Strathcona.git
           git push
