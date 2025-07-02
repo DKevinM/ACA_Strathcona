@@ -46,26 +46,23 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Fetch PurpleAir sensors and compute distances
 async function fetchPurpleAirData(clickLat, clickLon) {
-  const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
-  const url = 'https://api.purpleair.com/v1/sensors?fields=name,last_seen,latitude,longitude,pm2.5_60minute,humidity';
-
   try {
-    const resp = await fetch(url, {
-      headers: { 'X-API-Key': API_KEY }
+    const resp = await fetch('data/purpleair_data.json');
+    const sensors = await resp.json();
+
+    // Add distance to each
+    sensors.forEach(s => {
+      s.dist = getDistance(clickLat, clickLon, s.lat, s.lon);
     });
 
-    const data = await resp.json();
-    const fields = data.fields;
-    const rows = data.data;
-
-    console.log("Returned field order:", fields);
-
-    const get = (row, fieldName) => {
-      const index = fields.indexOf(fieldName);
-      return index !== -1 ? row[index] : null;
-    };
+    // Sort by distance
+    return sensors.sort((a, b) => a.dist - b.dist);
+  } catch (err) {
+    console.error("Error loading PurpleAir JSON:", err);
+    return [];
+  }
+}
 
     // Map and filter valid sensors
     const sensors = rows.map(row => {
