@@ -1,0 +1,13 @@
+- name: Fetch and format PurpleAir data
+  run: |
+    mkdir -p data
+    curl -s -H "X-API-Key: ${{ secrets.DKREPO }}" \
+      "https://api.purpleair.com/v1/sensors?fields=name,last_seen,latitude,longitude,pm2.5_60minute,humidity" \
+      | jq '[.data[] | {
+          name: .[0],
+          last_seen: .[1],
+          lat: .[2],
+          lon: .[3],
+          pm25_raw: .[4],
+          rh: .[5]
+        }]' > data/purpleair_data.json
