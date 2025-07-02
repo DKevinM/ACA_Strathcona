@@ -1,13 +1,35 @@
-- name: Fetch and format PurpleAir data
-  run: |
-    mkdir -p data
-    curl -s -H "X-API-Key: ${{ secrets.DKREPO }}" \
-      "https://api.purpleair.com/v1/sensors?fields=name,last_seen,latitude,longitude,pm2.5_60minute,humidity" \
-      | jq '[.data[] | {
-          name: .[0],
-          last_seen: .[1],
-          lat: .[2],
-          lon: .[3],
-          pm25_raw: .[4],
-          rh: .[5]
-        }]' > data/purpleair_data.json
+name: Fetch PurpleAir Data
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Runs hourly
+  workflow_dispatch:     # Allows manual triggering
+
+jobs:
+  fetch-purpleair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch and format PurpleAir data
+        run: |
+          mkdir -p data
+          curl -s -H "X-API-Key: ${{ secrets.DKREPO }}" \
+            "https://api.purpleair.com/v1/sensors?fields=name,last_seen,latitude,longitude,pm2.5_60minute,humidity" \
+            | jq '[.data[] | {
+                name: .[0],
+                last_seen: .[1],
+                lat: .[2],
+                lon: .[3],
+                pm25_raw: .[4],
+                rh: .[5]
+              }]' > data/purpleair_data.json
+
+      - name: Commit and push new data
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/purpleair_data.json
+          git commit -m "Update PurpleAir data" || echo "No changes to commit"
+          git push
