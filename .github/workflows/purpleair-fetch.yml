@@ -1,9 +1,9 @@
 name: Fetch PurpleAir Data
 
-on:
-  schedule:
-    - cron: '0 * * * *'  # Runs hourly
-  workflow_dispatch:     # Allows manual triggering
+#on:
+#  schedule:
+#    - cron: '0 * * * *'  # Runs hourly
+#  workflow_dispatch:     # Allows manual triggering
 
 jobs:
   fetch-purpleair:
