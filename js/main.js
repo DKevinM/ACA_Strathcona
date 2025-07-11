@@ -211,8 +211,7 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI.forecast/main/output/AQHI_
     });
         overlayLayers[label] = layer;
         layerControl.addOverlay(layer, "Interpolated AQHI Grid");
-    })
-  });
+    });
 
 let hasClickedBefore = false;
 let lastClickedLatLng = null;
