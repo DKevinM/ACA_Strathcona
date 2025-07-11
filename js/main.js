@@ -200,23 +200,21 @@ function showWeather(data) {
 
 // Load AQHI interpolated grid
 fetch("https://raw.githubusercontent.com/DKevinM/AQHI.forecast/main/output/AQHI_Strathcona.geojson")
-  .then(r => r.json())
-  .then(data => {
-    const grid = L.geoJson(data, {
-      style: f => ({
-        fillColor: getAQHIColor(f.properties.aqhi_str),
-        weight: 0.5,
-        opacity: 0.4,
-        color: 'white',
-        dashArray: '3',
-        fillOpacity: 0.4
-      }),
-      onEachFeature: (f, l) => l.bindTooltip(`AQHI: ${f.properties.aqhi_str}`, {
-        sticky: true,
-        direction: 'top',
-        opacity: 0.8
-      })
-    });
+    .then(resp => resp.json())
+    .then(data => {
+      const timestamp = data.features[0]?.properties?.timestamp || label;
+      const layer = L.geoJson(data, {
+        style: style,
+        onEachFeature: (feature, layer) => {
+          layer.bindPopup(`AQHI @ ${timestamp}<br><b>AQHI:</b> ${feature.properties.value}`);
+        }
+      });
+    onEachFeature: (f, l) => l.bindTooltip(`AQHI: ${f.properties.aqhi_str}`, {
+      sticky: true,
+      direction: 'top',
+      opacity: 0.8
+    })
+  });
     grid.addTo(map);
     layerControl.addOverlay(grid, "Interpolated AQHI Grid");
   });
