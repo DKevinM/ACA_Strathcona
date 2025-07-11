@@ -84,8 +84,6 @@ function getAQHIColor(aqhi) {
     aqhi === "" || 
     aqhi === "NA" || 
     aqhi === "null" ||
-    aqhi === 203 ||
-    aqhi === "203"
   ) return "#808080";
   const value = parseFloat(aqhi);
   if (isNaN(value)) return "#808080";
@@ -282,8 +280,11 @@ async function renderClickData(lat, lng) {
 
   for (const st of closest) {
     const aqhiVal = parseFloat(st.Value);
-      console.log("Raw AQHI value:", st.Value);
-      console.log(`Station: ${st.StationName}, AQHI: ${aqhiVal}`);
+        // Force Woodcroft AQHI to NA if needed
+        if (st.StationName === "Woodcroft") {
+          console.warn("Overriding Woodcroft AQHI to null");
+          aqhiVal = null;
+        }
     const color = getAQHIColor(aqhiVal);
 
     const circle = L.circleMarker([st.Latitude, st.Longitude], {
