@@ -206,17 +206,12 @@ fetch("https://raw.githubusercontent.com/DKevinM/AQHI.forecast/main/output/AQHI_
       const layer = L.geoJson(data, {
         style: style,
         onEachFeature: (feature, layer) => {
-          layer.bindPopup(`AQHI @ ${timestamp}<br><b>AQHI:</b> ${feature.properties.value}`);
-        }
-      });
-    onEachFeature: (f, l) => l.bindTooltip(`AQHI: ${f.properties.aqhi_str}`, {
-      sticky: true,
-      direction: 'top',
-      opacity: 0.8
+        layer.bindPopup(`AQHI @ ${timestamp}<br><b>AQHI:</b> ${feature.properties.value}`);
+      }
+    });
+        overlayLayers[label] = layer;
+        layerControl.addOverlay(layer, "Interpolated AQHI Grid");
     })
-  });
-    grid.addTo(map);
-    layerControl.addOverlay(grid, "Interpolated AQHI Grid");
   });
 
 let hasClickedBefore = false;
