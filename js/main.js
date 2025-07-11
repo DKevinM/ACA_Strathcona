@@ -280,6 +280,7 @@ async function renderClickData(lat, lng) {
 
   for (const st of closest) {
     const aqhiVal = parseFloat(st.Value);
+      console.log("Raw AQHI value:", st.Value);
       console.log(`Station: ${st.StationName}, AQHI: ${aqhiVal}`);
     const color = getAQHIColor(aqhiVal);
 
