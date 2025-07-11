@@ -83,7 +83,7 @@ function getAQHIColor(aqhi) {
     aqhi === undefined || 
     aqhi === "" || 
     aqhi === "NA" || 
-    aqhi === "null" ||
+    aqhi === "null"
   ) return "#808080";
   const value = parseFloat(aqhi);
   if (isNaN(value)) return "#808080";
