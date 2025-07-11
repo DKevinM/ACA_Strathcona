@@ -78,9 +78,16 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 function getAQHIColor(aqhi) {
-  if (aqhi === null || aqhi === undefined || aqhi === "" || aqhi === "NA" || aqhi === "null") return "#808080";
+  if (
+    aqhi === null || 
+    aqhi === undefined || 
+    aqhi === "" || 
+    aqhi === "NA" || 
+    aqhi === "null"
+  ) return "#808080";
   const value = parseFloat(aqhi);
   if (isNaN(value)) return "#808080";
+  
   if (value >= 10) return "#9a0100";
   if (value >= 9) return "#cc0001";
   if (value >= 8) return "#fe0002";
