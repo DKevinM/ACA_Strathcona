@@ -199,7 +199,7 @@ function showWeather(data) {
 }
 
 // Load AQHI interpolated grid
-fetch("https://raw.githubusercontent.com/DKevinM/AQHI_map/main/interpolated_grid.geojson")
+fetch("https://raw.githubusercontent.com/DKevinM/AQHI.forecast/main/output/AQHI_Strathcona.geojson")
   .then(r => r.json())
   .then(data => {
     const grid = L.geoJson(data, {
