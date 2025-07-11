@@ -284,8 +284,9 @@ async function renderClickData(lat, lng) {
         if (st.StationName.trim() === "Woodcroft") {
           console.warn("Overriding Woodcroft AQHI to null");
           aqhiVal = null;
+          console.log(`Station: ${st.StationName}, AQHI: ${aqhiVal}`);
         }
-    console.log(`Station: ${st.StationName}, AQHI: ${aqhiVal}`);
+
     const color = getAQHIColor(aqhiVal);
 
     const circle = L.circleMarker([st.Latitude, st.Longitude], {
