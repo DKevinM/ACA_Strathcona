@@ -281,10 +281,11 @@ async function renderClickData(lat, lng) {
   for (const st of closest) {
     const aqhiVal = parseFloat(st.Value);
         // Force Woodcroft AQHI to NA if needed
-        if (st.StationName === "Woodcroft") {
+        if (st.StationName.trim() === "Woodcroft") {
           console.warn("Overriding Woodcroft AQHI to null");
           aqhiVal = null;
         }
+    console.log(`Station: ${st.StationName}, AQHI: ${aqhiVal}`);
     const color = getAQHIColor(aqhiVal);
 
     const circle = L.circleMarker([st.Latitude, st.Longitude], {
