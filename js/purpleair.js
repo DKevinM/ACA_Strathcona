@@ -46,49 +46,44 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+
 async function fetchPurpleAirData(clickLat, clickLon) {
   try {
-    const resp = await fetch('data/purpleair_data.json');
-    const sensors = await resp.json();
+    const url = `https://api.purpleair.com/v1/sensors?fields=sensor_index,name,latitude,longitude,pm2.5_atm,humidity,temperature&location_type=0`;
 
-    // Add distance to each
+    const response = await fetch(url, {
+      headers: {
+        "X-API-Key": "ED3E067C-0904-11ED-8561-42010A800005"  
+      }
+    });
+
+    const data = await response.json();
+
+    // Extract and format sensor objects
+    const sensors = data.data.map((d, i) => {
+      return {
+        sensor_index: d[0],
+        name: d[1],
+        lat: d[2],
+        lon: d[3],
+        pm25: d[4],
+        humidity: d[5],
+        temperature: d[6]
+      };
+    });
+
+    // Calculate distance from clicked point
     sensors.forEach(s => {
       s.dist = getDistance(clickLat, clickLon, s.lat, s.lon);
     });
 
-    // Sort by distance
-    return sensors.sort((a, b) => a.dist - b.dist);
-  } catch (err) {
-    console.error("Error loading PurpleAir JSON:", err);
+    return sensors.sort((a, b) => a.dist - b.dist); // sort by distance
+  } catch (error) {
+    console.error("Error fetching PurpleAir data:", error);
     return [];
   }
 }
 
-    // Map and filter valid sensors
-    const sensors = rows.map(row => {
-      const name = get(row, "name");
-      const last_seen = get(row, "last_seen");
-      const lat = parseFloat(get(row, "latitude"));
-      const lon = parseFloat(get(row, "longitude"));
-      const pm25_raw = parseFloat(get(row, "pm2.5_60minute"));
-      const rh = parseFloat(get(row, "humidity"));
-      const dist = getDistance(clickLat, clickLon, lat, lon);
-
-      if (!isNaN(lat) && !isNaN(lon) && !isNaN(pm25_raw)) {
-        return { name, last_seen, lat, lon, rh, pm25_raw, dist };
-      } else {
-        return null;
-      }
-    }).filter(x => x !== null);
-
-    // Sort by distance and return
-    return sensors.sort((a, b) => a.dist - b.dist);
-
-  } catch (err) {
-    console.error("Error fetching PurpleAir data:", err);
-    return [];
-  }
-}
 
 
 // Add PurpleAir markers to map
