@@ -47,39 +47,49 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 
+// Fetch PurpleAir sensors and compute distances
 async function fetchPurpleAirData(clickLat, clickLon) {
+  const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
+  const url = 'https://api.purpleair.com/v1/sensors?fields=name,last_seen,latitude,longitude,pm2.5_60minute,humidity';
+
   try {
-    const url = `https://api.purpleair.com/v1/sensors?fields=sensor_index,name,latitude,longitude,pm2.5_atm,humidity,temperature&location_type=0`;
+    const resp = await fetch(url, {
+      headers: { 'X-API-Key': API_KEY }
+    });
 
-    const response = await fetch(url, {
-      headers: {
-        "X-API-Key": "ED3E067C-0904-11ED-8561-42010A800005"  
+    const data = await resp.json();
+    const fields = data.fields;
+    const rows = data.data;
+
+    console.log("Returned field order:", fields);
+
+    const get = (row, fieldName) => {
+      const index = fields.indexOf(fieldName);
+      return index !== -1 ? row[index] : null;
+    };
+
+    // Map and filter valid sensors
+    const sensors = rows.map(row => {
+      const name = get(row, "name");
+      const last_seen = get(row, "last_seen");
+      const lat = parseFloat(get(row, "latitude"));
+      const lon = parseFloat(get(row, "longitude"));
+      const pm25_raw = parseFloat(get(row, "pm2.5_60minute"));
+      const rh = parseFloat(get(row, "humidity"));
+      const dist = getDistance(clickLat, clickLon, lat, lon);
+
+      if (!isNaN(lat) && !isNaN(lon) && !isNaN(pm25_raw)) {
+        return { name, last_seen, lat, lon, rh, pm25_raw, dist };
+      } else {
+        return null;
       }
-    });
+    }).filter(x => x !== null);
 
-    const data = await response.json();
+    // Sort by distance and return
+    return sensors.sort((a, b) => a.dist - b.dist);
 
-    // Extract and format sensor objects
-    const sensors = data.data.map((d, i) => {
-      return {
-        sensor_index: d[0],
-        name: d[1],
-        lat: d[2],
-        lon: d[3],
-        pm25: d[4],
-        humidity: d[5],
-        temperature: d[6]
-      };
-    });
-
-    // Calculate distance from clicked point
-    sensors.forEach(s => {
-      s.dist = getDistance(clickLat, clickLon, s.lat, s.lon);
-    });
-
-    return sensors.sort((a, b) => a.dist - b.dist); // sort by distance
-  } catch (error) {
-    console.error("Error fetching PurpleAir data:", error);
+  } catch (err) {
+    console.error("Error fetching PurpleAir data:", err);
     return [];
   }
 }
