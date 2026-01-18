@@ -250,63 +250,141 @@ map.on('click', async function (e) {
   });
 
   
-async function renderClickData(lat, lng) {
-  // Add marker at clicked point
-  const marker = L.marker([lat, lng]).addTo(map);
-  existingMarkers.push(marker);
-  marker.bindTooltip(`Your location<br>Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`, {
-    sticky: true,
-    direction: 'top',
-    opacity: 0.9
-  }).openTooltip();
-
-  // AQHI stations
-  const closest = Object.values(dataByStation)
+  async function renderClickData(lat, lng) {
+  
+    // ---- MARK CLICK LOCATION ----
+    const marker = L.marker([lat, lng]).addTo(map);
+    existingMarkers.push(marker);
+  
+    marker.bindTooltip(
+      `Your location<br>Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`,
+      { sticky: true, direction: "top", opacity: 0.9 }
+    ).openTooltip();
+  
+    // ==============================
+    // 1) FIND NEAREST AQHI STATION
+    // ==============================
+    const closestStation = Object.values(dataByStation)
       .map(arr => {
         const aqhiObj = arr.find(d => d.ParameterName === "AQHI");
-        return aqhiObj || arr[0]; // fallback just in case
+        return aqhiObj || arr[0];
       })
-    .map(r => ({ ...r, dist: getDistance(lat, lng, r.Latitude, r.Longitude) }))
-    .sort((a, b) => a.dist - b.dist)
-    .slice(0, 2);
-
-  for (const st of closest) {
-    const aqhiVal = parseFloat(st.Value);
-        // Force Woodcroft AQHI to NA if needed
-        if (st.StationName.trim() === "Woodcroft") {
-          console.warn("Overriding Woodcroft AQHI to null");
-          aqhiVal = null;
-          console.log(`Station: ${st.StationName}, AQHI: ${aqhiVal}`);
+      .map(r => ({
+        ...r,
+        dist_km: (getDistance(lat, lng, r.Latitude, r.Longitude) / 1000).toFixed(1)
+      }))
+      .sort((a, b) => a.dist_km - b.dist_km)[0];
+  
+    const stationColor = getAQHIColor(closestStation.Value);
+  
+    const stationCircle = L.circleMarker(
+      [closestStation.Latitude, closestStation.Longitude],
+      {
+        radius: 15,
+        color: "#000",
+        fillColor: stationColor,
+        weight: 3,
+        fillOpacity: 0.8
+      }
+    ).addTo(map);
+  
+    stationMarkers.push(stationCircle);
+  
+    // Build simple readable popup
+    const stationPopup = `
+    <strong>Nearest AQHI Station</strong><br>
+    ${closestStation.StationName}<br>
+    Distance: ${closestStation.dist_km} km<br>
+    AQHI: ${closestStation.Value}<br>
+    `;
+  
+    stationCircle.bindPopup(stationPopup);
+  
+    // ==============================
+    // 2) FIND NEAREST PURPLEAIR
+    // ==============================
+    const nearestPA = await findNearestPurpleAir(lat, lng);
+  
+    if (nearestPA) {
+  
+      const paMarker = L.circleMarker(
+        [nearestPA.lat, nearestPA.lon],
+        {
+          radius: 6,
+          color: "#222",
+          fillColor: getAQHIColor(nearestPA.eAQHI),
+          fillOpacity: 0.85
         }
-
-    const color = getAQHIColor(aqhiVal);
-
-    const circle = L.circleMarker([st.Latitude, st.Longitude], {
-      radius: 15,
-      color: "#000",
-      fillColor: color,
-      weight: 3,
-      fillOpacity: 0.8
-    }).addTo(map);
-
-    window.fetchRecentStationData(st.StationName).then(html => {
-      circle.bindPopup(html, { maxWidth: 300 });
-    });
-
-    stationMarkers.push(circle);
+      ).addTo(map);
+  
+      window.purpleAirMarkers.push(paMarker);
+  
+      const paPopup = `
+        <strong>Nearest PurpleAir</strong><br>
+        Distance: ${nearestPA.dist_km} km<br>
+        PM2.5 (corr): ${nearestPA.pm_corr.toFixed(1)} µg/m³<br>
+        Estimated AQHI: ${nearestPA.eAQHI}
+      `;
+  
+      paMarker.bindPopup(paPopup);
+    }
+  
+    // ==============================
+    // 3) LOCAL WEATHER
+    // ==============================
+    try {
+      const wresp = await fetch(
+        `https://api.open-meteo.com/v1/forecast?` +
+        `latitude=${lat}&longitude=${lng}` +
+        `&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,` +
+        `snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,` +
+        `wind_gusts_10m,weathercode&timezone=America%2FEdmonton`
+      );
+  
+      const wdata = await wresp.json();
+      showWeather(wdata);
+  
+    } catch (err) {
+      console.error("Error fetching weather data", err);
+    }
   }
 
-  // Weather
-  try {
-    const wresp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=America%2FEdmonton`);
-    const wdata = await wresp.json();
-    showWeather(wdata);
-  } catch (err) {
-    console.error("Error fetching weather data", err);
-  }
 
-  // PurpleAir
-  showPurpleAir(lat, lng);
-}
+  async function findNearestPurpleAir(lat, lng) {
+  
+    const PURPLE_URL =
+      "https://raw.githubusercontent.com/DKevinM/AB_datapull/main/data/AB_PM25_map.json";
+  
+    const res = await fetch(PURPLE_URL);
+    const data = await res.json();
+  
+    const records = Array.isArray(data)
+      ? data
+      : (Array.isArray(data.data) ? data.data : []);
+  
+    const sensors = records
+      .map(rec => {
+        const sLat = parseFloat(rec.lat ?? rec.Latitude);
+        const sLon = parseFloat(rec.lon ?? rec.Longitude);
+        const pm = parseFloat(rec.pm_corr);
+  
+        if (!isFinite(sLat) || !isFinite(sLon) || !isFinite(pm)) return null;
+  
+        const dist_m = getDistance(lat, lng, sLat, sLon);
+  
+        return {
+          lat: sLat,
+          lon: sLon,
+          pm_corr: pm,
+          eAQHI: Math.min(10, Math.floor(pm / 10) + 1),
+          dist_km: (dist_m / 1000).toFixed(1)
+        };
+      })
+      .filter(Boolean);
+  
+    sensors.sort((a, b) => a.dist_km - b.dist_km);
+  
+    return sensors[0] || null;
+  }
 
 
