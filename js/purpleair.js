@@ -49,7 +49,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 // Fetch PurpleAir sensors and compute distances
 async function fetchPurpleAirData(clickLat, clickLon) {
-  const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
+  const API_KEY = 'PA_dk';
   const url = 'https://api.purpleair.com/v1/sensors?fields=name,last_seen,latitude,longitude,pm2.5_60minute,humidity';
 
   try {
